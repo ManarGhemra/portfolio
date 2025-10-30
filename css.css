@@ -1,0 +1,215 @@
+/* Dark neon glassmorphism — responsive & animated */
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;500;700&display=swap');
+
+:root{
+  --bg:#0b0c10;
+  --card:#0f1318;
+  --muted:#9aa6bf;
+  --accent1:#7c4dff;
+  --accent2:#00e5ff;
+  --glass: rgba(255,255,255,0.04);
+  --glass-2: rgba(124,77,255,0.06);
+}
+
+*{box-sizing:border-box}
+html,body{height:100%}
+body{
+  margin:0;
+  font-family:'Poppins',sans-serif;
+  background: linear-gradient(180deg, #04050a 0%, #0b0c10 100%);
+  color:#e6eef9;
+  -webkit-font-smoothing:antialiased;
+  overflow-x: hidden;
+}
+
+/* background blobs + grid glow */
+.bg{position:fixed;inset:0;z-index:-2;overflow:hidden}
+.blob{
+  position:absolute;
+  filter:blur(60px);
+  opacity:0.35;
+  transform:translateZ(0);
+}
+.b1{width:520px;height:520px;background:radial-gradient(circle at 30% 30%, #7c4dff 0%, transparent 40%);left:-120px;top:-100px;animation:float 10s ease-in-out infinite}
+.b2{width:420px;height:420px;background:radial-gradient(circle at 70% 70%, #00e5ff 0%, transparent 30%);right:-80px;bottom:-120px;animation:float 14s ease-in-out infinite}
+@keyframes float{0%{transform:translateY(0)}50%{transform:translateY(30px)}100%{transform:translateY(0)}}
+
+/* subtle grid/glow overlay */
+.grid-glow{position:absolute;inset:0;background-image:linear-gradient(transparent 0, rgba(255,255,255,0.01) 1px);opacity:0.04;}
+
+/* header */
+.top{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  padding:36px clamp(18px,6vw,80px);
+  gap:20px;
+  backdrop-filter: blur(6px);
+}
+.name{font-weight:700;margin:0;font-size:clamp(22px,3.6vw,40px);letter-spacing:0.6px;color:var(--accent1)}
+.name span{color:var(--accent2)}
+.role{margin:6px 0 0 0;color:var(--muted);font-weight:500}
+
+/* buttons */
+.btn{
+  background:linear-gradient(90deg,var(--accent1),var(--accent2));
+  color:#081017;
+  border:none;padding:10px 16px;border-radius:12px;font-weight:600;cursor:pointer;box-shadow:0 8px 30px rgba(0,0,0,0.6);
+  transition:transform .18s ease,box-shadow .18s;
+}
+.btn:hover{transform:translateY(-4px);box-shadow:0 14px 40px rgba(0,0,0,0.7)}
+.btn.ghost{background:transparent;color:var(--accent2);border:1px solid rgba(255,255,255,0.06);box-shadow:none}
+
+/* main wrapper */
+.wrap{max-width:1100px;margin:32px auto;padding:0 20px 80px}
+
+/* cards */
+.card{
+  background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+  border:1px solid rgba(255,255,255,0.04);
+  border-radius:14px;
+  padding:22px;
+  margin:20px 0;
+  box-shadow:0 6px 28px rgba(2,6,23,0.6);
+  display:flex;gap:20px;align-items:center;
+  transition:transform .25s cubic-bezier(.2,.9,.3,1),box-shadow .25s;
+}
+.card:hover{transform:translateY(-6px);box-shadow:0 18px 60px rgba(15,10,40,0.6)}
+
+/* intro layout */
+.intro{display:flex;flex-wrap:wrap}
+.profile img{width:140px;height:140px;border-radius:18px;object-fit:cover;border:3px solid rgba(255,255,255,0.06);box-shadow:0 8px 30px rgba(124,77,255,0.12)}
+.bio{flex:1;min-width:240px}
+.bio h2{margin-top:0;color:var(--accent1)}
+.contact-row{display:flex;align-items:center;gap:8px;margin-top:10px}
+.link{color:var(--accent2);text-decoration:none;font-weight:600}
+.sep{color:var(--muted)}
+
+/* section titles */
+.section-title{margin:0 0 10px 0;color:var(--accent2);font-size:1.05rem}
+
+/* lists and chips */
+.list{padding-left:0;margin:8px 0 0 0;list-style:none}
+.list li{padding:6px 0;color:#d7e4ff}
+.chips{display:flex;flex-wrap:wrap;gap:10px}
+.chips span{background:linear-gradient(90deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));padding:8px 12px;border-radius:999px;border:1px solid rgba(255,255,255,0.03);color:var(--muted)}
+
+/* projects grid */
+.projects-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px;width:100%}
+.project{
+  background:linear-gradient(180deg, rgba(0,0,0,0.2), rgba(255,255,255,0.02));
+  border-radius:12px;padding:16px;border:1px solid rgba(124,77,255,0.06);
+  transition:transform .18s,box-shadow .18s;
+}
+.project h3{margin:0 0 6px 0;color:#fff}
+.project p{margin:0 0 12px;color:var(--muted)}
+.project a{color:var(--accent2);text-decoration:none;font-weight:600}
+.project:hover{transform:translateY(-6px);box-shadow:0 18px 40px rgba(0,0,0,0.6)}
+
+/* contact */
+.contact-card .contact-actions{display:flex;gap:12px;flex-wrap:wrap}
+.muted{color:var(--muted)}
+
+/* footer */
+.foot{padding:26px;text-align:center;color:var(--muted);opacity:0.95}
+
+/* reveal animation */
+.reveal{opacity:0;transform:translateY(18px);transition:all .7s cubic-bezier(.2,.9,.3,1)}
+.reveal.visible{opacity:1;transform:none}
+
+/* responsive */
+@media (max-width:820px){
+  .card{flex-direction:column;align-items:flex-start}
+  .top{flex-direction:column;align-items:flex-start;padding:22px}
+  .top-right{margin-top:12px;display:flex;gap:10px}
+}
+/* --- MODE IMPRESSION (CV PDF propre) --- */
+@media print {
+  body {
+    background: white !important;
+    color: #000 !important;
+  }
+  .bg, .no-print, .blob, .grid-glow {
+    display: none !important;
+  }
+  .card {
+    background: white !important;
+    box-shadow: none !important;
+    border: none !important;
+    color: #000;
+  }
+  .section-title {
+    color: #003366 !important;
+  }
+  a {
+    color: #003366 !important;
+    text-decoration: none !important;
+  }
+  img {
+    border: none !important;
+    box-shadow: none !important;
+  }
+  .wrap {
+    padding: 0;
+  }
+  @page {
+    size: A4 portrait;
+    margin: 1.5cm;
+  }
+}
+
+@media print {
+body.print-mode {
+background: white !important;
+-webkit-print-color-adjust: exact;
+}
+
+.no-print, header .top-right, .btn.ghost, a.btn.ghost {
+display: none !important;
+}
+
+.project-card a.btn {
+display: none !important; /* cacher Voir le projet */
+}
+
+.bg, .grid-glow {
+display: none !important;
+}
+
+main.wrap {
+width: 100%;
+margin: 0;
+padding: 20px;
+}
+
+section.card {
+page-break-inside: avoid;
+margin-bottom: 12px;
+padding: 12px;
+background: none;
+box-shadow: none;
+border: 1px solid #ddd;
+}
+
+h2.section-title {
+margin-bottom: 6px;
+font-size: 1.2em;
+color: #111;
+}
+
+.project-card {
+border: 1px solid #ccc;
+padding: 8px;
+margin: 6px 0;
+}
+
+footer.foot {
+display: none;
+}
+
+/* Forcer à deux pages maximum */
+@page {
+size: A4;
+margin: 1.2cm;
+}
+}

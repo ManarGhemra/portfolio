@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Admin — Portfolio</title>
+  <link rel="stylesheet" href="css.css" />
+</head>
+<body>
+  <div class="bg"><div class="blob b1"></div><div class="blob b2"></div></div>
+
+  <main class="wrap" style="max-width:760px">
+    <section class="card" style="flex-direction:column;align-items:stretch">
+      <h2 class="section-title">🔐 Espace Administrateur</h2>
+
+      <div id="loginBlock">
+        <input id="pwd" type="password" placeholder="Entrez le mot de passe" style="padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,0.06);background:transparent;color:inherit;margin-bottom:12px">
+        <div style="display:flex;gap:10px">
+          <button class="btn" onclick="login()">Se connecter</button>
+          <button class="btn ghost" onclick="location.href='index.html'">Retour</button>
+        </div>
+        <p class="muted" style="margin-top:12px">Mot de passe par défaut : <strong>manar2025</strong></p>
+      </div>
+
+      <div id="adminPanel" style="display:none;margin-top:18px">
+        <h3>➕ Ajouter un projet</h3>
+
+        <!-- On garde les mêmes inputs mais on demande LINK obligatoire (pas de stockage de fichiers locaux) -->
+        <input id="title" placeholder="Titre du projet" style="width:100%;padding:10px;margin:6px 0;border-radius:8px;background:transparent;border:1px solid rgba(255,255,255,0.04);color:inherit">
+        <input id="desc" placeholder="Courte description" style="width:100%;padding:10px;margin:6px 0;border-radius:8px;background:transparent;border:1px solid rgba(255,255,255,0.04);color:inherit">
+        <input id="link" placeholder="Lien du projet (https://...)" style="width:100%;padding:10px;margin:6px 0;border-radius:8px;background:transparent;border:1px solid rgba(255,255,255,0.04);color:inherit">
+
+        <div style="display:flex;gap:10px;margin-top:10px">
+          <button class="btn" onclick="addProject()">Ajouter</button>
+          <button class="btn ghost" onclick="clearAll()">Supprimer tout</button>
+          <button class="btn ghost" onclick="logout()">Se déconnecter</button>
+        </div>
+
+        <h3 style="margin-top:18px">Projets actuels</h3>
+        <div id="currentList" style="margin-top:10px"></div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const PASSWORD = 'manar2025';
+
+    function login(){
+      const v = document.getElementById('pwd').value;
+      if(v === PASSWORD){
+        document.getElementById('loginBlock').style.display = 'none';
+        document.getElementById('adminPanel').style.display = 'block';
+        renderList();
+      } else alert('Mot de passe incorrect !');
+    }
+
+    function logout(){
+      document.getElementById('pwd').value = '';
+      document.getElementById('loginBlock').style.display = 'block';
+      document.getElementById('adminPanel').style.display = 'none';
+    }
+
+    function addProject(){
+      const title = document.getElementById('title').value.trim();
+      const desc = document.getElementById('desc').value.trim();
+      const link = document.getElementById('link').value.trim();
+
+      if(!title || !desc){ alert('Remplis le titre et la description !'); return; }
+      if(!link || !isValidUrl(link)){ alert('Ajoute un lien valide (https://...) pour ton projet !'); return; }
+
+      // Récupérer les projets existants (sécurisé avec try/catch)
+      let arr = [];
+      try {
+        arr = JSON.parse(localStorage.getItem('projects')) || [];
+      } catch(e){
+        arr = [];
+      }
+
+      // Ajouter le nouveau projet en tête (recent en premier)
+      arr.unshift({ title, desc, link });
+      localStorage.setItem('projects', JSON.stringify(arr));
+
+      // Réinitialiser champs
+      document.getElementById('title').value = '';
+      document.getElementById('desc').value = '';
+      document.getElementById('link').value = '';
+
+      renderList();
+      alert('Projet ajouté ✅');
+    }
+
+    function renderList(){
+      const list = document.getElementById('currentList');
+      let arr = [];
+      try {
+        arr = JSON.parse(localStorage.getItem('projects')) || [];
+      } catch(e){
+        arr = [];
+      }
+      if(arr.length === 0){
+        list.innerHTML = '<p class="muted">Aucun projet enregistré.</p>';
+        return;
+      }
+      list.innerHTML = arr.map((p,idx)=>`
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 6px;border-radius:8px;background:rgba(255,255,255,0.02);margin-bottom:8px">
+          <div style="flex:1"><strong>${escapeHtml(p.title)}</strong><div class="muted" style="font-size:0.9rem">${escapeHtml(p.desc)}</div></div>
+          <div style="display:flex;gap:8px;margin-left:12px">
+            <a class="btn ghost" href="${escapeAttr(p.link)}" target="_blank">Ouvrir</a>
+            <button class="btn ghost" onclick="removeAt(${idx})">Suppr</button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function removeAt(i){
+      let arr = [];
+      try { arr = JSON.parse(localStorage.getItem('projects')) || []; } catch(e){ arr = []; }
+      if(!arr[i]) return;
+      if(!confirm('Supprimer ce projet ?')) return;
+      arr.splice(i,1);
+      localStorage.setItem('projects', JSON.stringify(arr));
+      renderList();
+    }
+
+    function clearAll(){
+      if(!confirm('Supprimer tous les projets ?')) return;
+      localStorage.removeItem('projects');
+      renderList();
+      alert('Tous les projets supprimés.');
+    }
+
+    // utilitaires
+    function escapeHtml(s){ 
+      if(!s) return ''; 
+      return s.replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); 
+    }
+    function escapeAttr(s){ return s ? s.replace(/"/g,'&quot;') : '#'; }
+
+    function isValidUrl(s){
+      try {
+        const u = new URL(s);
+        return u.protocol === 'http:' || u.protocol === 'https:';
+      } catch(e){
+        return false;
+      }
+    }
+
+    // Afficher la liste au chargement si déjà connecté (si besoin)
+    document.addEventListener('DOMContentLoaded', ()=> {
+      // Si adminPanel visible par défaut (non connecté) ne montre rien
+      // renderList(); // on appelle renderList après login seulement
+    });
+  </script>
+</body>
+</html>
