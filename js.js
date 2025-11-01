@@ -1,34 +1,7 @@
-// ----- Animation d'apparition -----
-function revealOnScroll() {
-  const reveals = document.querySelectorAll(".reveal");
-  for (const r of reveals) {
-    const windowHeight = window.innerHeight;
-    const elementTop = r.getBoundingClientRect().top;
-    const elementVisible = 100;
-    if (elementTop < windowHeight - elementVisible) {
-      r.classList.add("visible");
-    }
-  }
-}
-window.addEventListener("scroll", revealOnScroll);
-revealOnScroll();
+// js.js - comportement de la page index (reveal, print, ajout dynamique des projets si présents)
 
-// ----- Bouton Télécharger CV -----
-document.getElementById("downloadBtn").addEventListener("click", () => {
-  window.print();
-});
-
-// ----- Bouton Imprimer -----
-const printBtn = document.getElementById("printBtn");
-if (printBtn) {
-  printBtn.addEventListener("click", () => {
-    window.print();
-  });
-}
-
-// ----- Fonction pour échapper le HTML -----
-function escapeHtml(s) {
-  if (!s) return "";
+function escapeHtml(s){
+  if(!s) return '';
   return s.replace(/[&<>"']/g, m => ({
     '&':'&amp;',
     '<':'&lt;',
@@ -38,22 +11,51 @@ function escapeHtml(s) {
   }[m]));
 }
 
-// ----- Charger les projets dynamiques ajoutés via admin.html -----
-function loadDynamicProjects() {
-  const list = document.getElementById("project-list");
-  if (!list) return;
+function revealOnScroll(){
+  document.querySelectorAll('.reveal').forEach(el=>{
+    const r = el.getBoundingClientRect();
+    if(r.top < window.innerHeight - 80) el.classList.add('visible');
+  });
+}
 
-  const projets = JSON.parse(localStorage.getItem("projets") || "[]");
-  for (const p of projets) {
-    const div = document.createElement("div");
-    div.className = "project-card";
-    div.innerHTML = `
-      <h3>${escapeHtml(p.titre)}</h3>
-      <p>${escapeHtml(p.description)}</p>
-      <a href="${escapeHtml(p.lien)}" target="_blank" class="btn ghost">Voir le projet</a>
-    `;
-    list.appendChild(div);
+function setupActions(){
+  const printBtn = document.getElementById('printBtn');
+  const downloadBtn = document.getElementById('downloadBtn');
+  if(printBtn) printBtn.addEventListener('click', ()=> window.print());
+  if(downloadBtn) downloadBtn.addEventListener('click', ()=> window.print());
+}
+
+// ✅ هذه هي الدالة الوحيدة التي تضيف المشاريع المخزنة
+function appendStoredProjects(){
+  try {
+    const stored = JSON.parse(localStorage.getItem('projects')) || [];
+    const container = document.getElementById('project-list');
+    if(!container || stored.length === 0) return;
+
+    // نتأكد أننا لا نضيف المشاريع مرتين
+    const existingTitles = Array.from(container.querySelectorAll('.project-card h3'))
+                               .map(h=>h.textContent.trim());
+
+    stored.forEach(p=>{
+      if (existingTitles.includes(p.title.trim())) return; // ✅ لا نكرر نفس المشروع
+
+      const div = document.createElement('div');
+      div.className = 'project-card';
+      div.innerHTML = `
+        <h3>${escapeHtml(p.title)}</h3>
+        <p>${escapeHtml(p.desc)}</p>
+        <a href="${p.link}" target="_blank" class="btn ghost">Voir le projet</a>
+      `;
+      container.appendChild(div);
+    });
+  } catch(e){
+    console.error('Erreur lors du chargement des projets depuis localStorage', e);
   }
 }
 
-loadDynamicProjects();
+document.addEventListener('DOMContentLoaded', ()=>{
+  appendStoredProjects();
+  setupActions();
+  revealOnScroll();
+  window.addEventListener('scroll', revealOnScroll);
+});
