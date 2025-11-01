@@ -32,6 +32,14 @@ function downloadBlenderFile(fileData, fileName) {
   URL.revokeObjectURL(url);
 }
 
+function handleProjectClick(event, project) {
+  if (project.type === 'blender') {
+    event.preventDefault(); // منع السلوك الافتراضي
+    downloadBlenderFile(project.fileData, project.fileName);
+  }
+  // إذا كان رابط عادي، يترك السلوك الافتراضي يفتح الرابط في نافذة جديدة
+}
+
 function revealOnScroll(){
   document.querySelectorAll('.reveal').forEach(el=>{
     const r = el.getBoundingClientRect();
@@ -66,7 +74,11 @@ function appendStoredProjects(){
       // تحديد الزر بناءً على نوع المشروع
       let buttonHTML = '';
       if (p.type === 'blender') {
-        buttonHTML = `<button class="btn ghost" onclick="downloadBlenderFile('${p.fileData}', '${p.fileName}')">Télécharger le fichier</button>`;
+        buttonHTML = `
+          <a href="#" class="btn ghost" onclick="handleProjectClick(event, ${escapeHtml(JSON.stringify(p))})">
+            Voir le projet
+          </a>
+        `;
       } else {
         buttonHTML = `<a href="${p.link}" target="_blank" class="btn ghost">Voir le projet</a>`;
       }
