@@ -132,14 +132,41 @@
           return;
         }
         
-        // تحويل الملف إلى رابط قابل للتحميل
-        const fileURL = URL.createObjectURL(file);
-        projectData.link = fileURL;
-        projectData.type = 'blender';
-        projectData.fileName = file.name;
+        // تخزين الملف كـ Blob في localStorage
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          projectData.fileData = e.target.result;
+          projectData.fileName = file.name;
+          projectData.type = 'blender';
+          
+          // Récupérer les projets existants
+          let arr = [];
+          try {
+            arr = JSON.parse(localStorage.getItem('projects')) || [];
+          } catch(e){
+            arr = [];
+          }
+
+          // Ajouter le nouveau projet
+          arr.unshift(projectData);
+          localStorage.setItem('projects', JSON.stringify(arr));
+
+          // Réinitialiser champs
+          document.getElementById('title').value = '';
+          document.getElementById('desc').value = '';
+          document.getElementById('link').value = '';
+          document.getElementById('blendFile').value = '';
+          document.querySelector('input[name="projectType"][value="link"]').checked = true;
+          toggleProjectType();
+
+          renderList();
+          alert('Projet ajouté ✅');
+        };
+        reader.readAsDataURL(file);
+        return; // نخرج من الدالة هنا لأننا ننتظر قراءة الملف
       }
 
-      // Récupérer les projets existants (sécurisé avec try/catch)
+      // Récupérer les projets existants
       let arr = [];
       try {
         arr = JSON.parse(localStorage.getItem('projects')) || [];
@@ -147,7 +174,7 @@
         arr = [];
       }
 
-      // Ajouter le nouveau projet en tête (recent en premier)
+      // Ajouter le nouveau projet
       arr.unshift(projectData);
       localStorage.setItem('projects', JSON.stringify(arr));
 
@@ -161,6 +188,27 @@
 
       renderList();
       alert('Projet ajouté ✅');
+    }
+
+    function downloadBlenderFile(fileData, fileName) {
+      // تحويل البيانات إلى Blob
+      const byteCharacters = atob(fileData.split(',')[1]);
+      const byteNumbers = new Array(byteCharacters.length);
+      for (let i = 0; i < byteCharacters.length; i++) {
+        byteNumbers[i] = byteCharacters.charCodeAt(i);
+      }
+      const byteArray = new Uint8Array(byteNumbers);
+      const blob = new Blob([byteArray], {type: 'application/octet-stream'});
+      
+      // إنشاء رابط تحميل تلقائي
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = fileName;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
     }
 
     function renderList(){
@@ -183,9 +231,10 @@
             ${p.type === 'blender' ? '<div style="font-size:0.8rem;color:#7c4dff">📁 Fichier Blender</div>' : ''}
           </div>
           <div style="display:flex;gap:8px;margin-left:12px">
-            <a class="btn ghost" href="${escapeAttr(p.link)}" target="_blank" download="${p.type === 'blender' ? (p.fileName || 'project.blend') : ''}">
-              ${p.type === 'blender' ? 'Télécharger' : 'Ouvrir'}
-            </a>
+            ${p.type === 'blender' ? 
+              `<button class="btn ghost" onclick="downloadBlenderFile('${p.fileData}', '${p.fileName}')">Télécharger</button>` : 
+              `<a class="btn ghost" href="${escapeAttr(p.link)}" target="_blank">Ouvrir</a>`
+            }
             <button class="btn ghost" onclick="removeAt(${idx})">Suppr</button>
           </div>
         </div>
@@ -198,11 +247,6 @@
       if(!arr[i]) return;
       if(!confirm('Supprimer ce projet ?')) return;
       
-      // تحرير رابط الملف إذا كان ملف Blender
-      if (arr[i].type === 'blender') {
-        URL.revokeObjectURL(arr[i].link);
-      }
-      
       arr.splice(i,1);
       localStorage.setItem('projects', JSON.stringify(arr));
       renderList();
@@ -210,16 +254,6 @@
 
     function clearAll(){
       if(!confirm('Supprimer tous les projets ?')) return;
-      
-      // تحرير جميع روابط ملفات Blender
-      let arr = [];
-      try { arr = JSON.parse(localStorage.getItem('projects')) || []; } catch(e){ arr = []; }
-      arr.forEach(project => {
-        if (project.type === 'blender') {
-          URL.revokeObjectURL(project.link);
-        }
-      });
-      
       localStorage.removeItem('projects');
       renderList();
       alert('Tous les projets supprimés.');
