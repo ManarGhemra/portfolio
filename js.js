@@ -37,14 +37,9 @@ function downloadBlenderFile(fileData, fileName) {
   }
 }
 
-function handleProjectClick(event, projectData) {
-  if (projectData.type === 'blender') {
-    event.preventDefault();
-    downloadBlenderFile(projectData.fileData, projectData.fileName);
-    return false;
-  }
-  // Pour les liens normaux, laisser le comportement par défaut
-  return true;
+function handleBlenderProject(event, fileData, fileName) {
+  event.preventDefault();
+  downloadBlenderFile(fileData, fileName);
 }
 
 function revealOnScroll(){
@@ -68,29 +63,33 @@ function appendStoredProjects(){
     const container = document.getElementById('project-list');
     if(!container || stored.length === 0) return;
 
-    // نتأكد أننا لا نضيف المشاريع مرتين
-    const existingTitles = Array.from(container.querySelectorAll('.project-card h3'))
-                               .map(h=>h.textContent.trim());
+    // إزالة المشاريع الافتراضية القديمة أولاً
+    const defaultProjects = [
+      'Chatbot universitaire',
+      'API REST avec FastAPI', 
+      'Site web de shopping',
+      'Site web de prévisions météorologiques',
+      'Site scientifique sur l\'espace',
+      'Portfolio personnel'
+    ];
+    
+    defaultProjects.forEach(title => {
+      const existingProject = Array.from(container.querySelectorAll('.project-card h3'))
+        .find(h3 => h3.textContent.trim() === title);
+      if (existingProject) {
+        existingProject.closest('.project-card').remove();
+      }
+    });
 
-    stored.forEach(p=>{
-      if (existingTitles.includes(p.title.trim())) return;
-
+    // إضافة المشاريع المخزنة
+    stored.forEach(p => {
       const div = document.createElement('div');
       div.className = 'project-card';
       
-      // إعداد البيانات للمشروع
-      const projectData = {
-        type: p.type,
-        fileData: p.fileData,
-        fileName: p.fileName,
-        link: p.link
-      };
-      
-      // إنشاء الزر مع البيانات المضمنة
       let buttonHTML = '';
       if (p.type === 'blender') {
         buttonHTML = `
-          <a href="#" class="btn ghost" onclick="handleProjectClick(event, ${escapeHtml(JSON.stringify(projectData)).replace(/"/g, '&quot;')})">
+          <a href="#" class="btn ghost" onclick="handleBlenderProject(event, '${p.fileData}', '${p.fileName}')">
             Voir le projet
           </a>
         `;
@@ -98,15 +97,15 @@ function appendStoredProjects(){
         buttonHTML = `<a href="${p.link}" target="_blank" class="btn ghost">Voir le projet</a>`;
       }
       
-      // إخفاء اسم الملف من الواجهة - فقط إشارة إلى أنه ملف Blender
       div.innerHTML = `
         <h3>${escapeHtml(p.title)}</h3>
         <p>${escapeHtml(p.desc)}</p>
-        ${p.type === 'blender' ? '<p style="font-size:0.9rem;color:#7c4dff">📁 Fichier 3D</p>' : ''}
+        ${p.type === 'blender' ? '<div style="font-size:0.9rem;color:#7c4dff">📁 Modèle 3D</div>' : ''}
         ${buttonHTML}
       `;
       container.appendChild(div);
     });
+
   } catch(e){
     console.error('Erreur lors du chargement des projets depuis localStorage', e);
   }
