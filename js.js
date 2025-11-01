@@ -13,6 +13,7 @@ function escapeHtml(s){
 
 function downloadBlenderFile(fileData, fileName) {
   try {
+    // تحويل البيانات إلى Blob
     const byteCharacters = atob(fileData.split(',')[1]);
     const byteNumbers = new Array(byteCharacters.length);
     for (let i = 0; i < byteCharacters.length; i++) {
@@ -21,6 +22,7 @@ function downloadBlenderFile(fileData, fileName) {
     const byteArray = new Uint8Array(byteNumbers);
     const blob = new Blob([byteArray], {type: 'application/octet-stream'});
     
+    // إنشاء رابط تحميل تلقائي
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
@@ -54,21 +56,7 @@ function setupActions(){
   if(downloadBtn) downloadBtn.addEventListener('click', ()=> window.print());
 }
 
-// ✅ دالة إضافة مشروع جديد دون حذف القدام
-function addProject(newProject){
-  try {
-    let oldProjects = JSON.parse(localStorage.getItem('projects')) || [];
-    // نضيف الجديد في البداية
-    oldProjects.unshift(newProject);
-    localStorage.setItem('projects', JSON.stringify(oldProjects));
-    alert('✅ Projet ajouté avec succès !');
-  } catch(e){
-    console.error('Erreur lors de l’ajout du projet:', e);
-    alert('Erreur lors de l’ajout du projet');
-  }
-}
-
-// ✅ هذه الدالة تعرض المشاريع المخزّنة
+// ✅ هذه هي الدالة الوحيدة التي تضيف المشاريع المخزنة
 function appendStoredProjects(){
   try {
     const stored = JSON.parse(localStorage.getItem('projects')) || [];
@@ -93,18 +81,21 @@ function appendStoredProjects(){
       }
     });
 
-    // عرض كل المشاريع من localStorage
+    // إضافة المشاريع المخزنة
     stored.forEach(p => {
       const div = document.createElement('div');
       div.className = 'project-card';
       
+      // إنشاء زر/رابط "Voir le projet" بطريقة آمنة (بدون تضمين fileData داخل onclick كسلسلة)
       let actionElem = null;
 
       if (p.type === 'blender') {
+        // عنصر رابط لكن سنمنع الـ href من تمرير البيانات، ونستخدم مستمع حدث لتمرير fileData بأمان
         const a = document.createElement('a');
         a.href = '#';
         a.className = 'btn ghost';
         a.textContent = 'Voir le projet';
+        // ربط مستمع الحدث الذي يمرّر البيانات عبر closure (آمن)
         a.addEventListener('click', function(evt){
           handleBlenderProject(evt, p.fileData, p.fileName);
         });
@@ -118,6 +109,7 @@ function appendStoredProjects(){
         actionElem = a;
       }
 
+      // تركيب المحتوى داخل البطاقة
       const titleEl = document.createElement('h3');
       titleEl.textContent = p.title || '';
       const descEl = document.createElement('p');
@@ -133,6 +125,7 @@ function appendStoredProjects(){
         div.appendChild(tag);
       }
 
+      // إضافة زر/رابط العملية ثم زر الحذف
       const wrapper = document.createElement('div');
       wrapper.style.display = 'flex';
       wrapper.style.gap = '8px';
@@ -143,8 +136,10 @@ function appendStoredProjects(){
       removeBtn.className = 'btn ghost';
       removeBtn.textContent = 'Supprimer';
       removeBtn.addEventListener('click', function(){
+        // إزالة المشروع من التخزين المحلي بناءً على عنوان و وصف و/أو filename للتفريق
         try {
           let arr = JSON.parse(localStorage.getItem('projects')) || [];
+          // نبحث عن العنصر المطابق بالمؤشر الأول الذي يطابق العنوان والdesc و (filename إن وُجد)
           const idx = arr.findIndex(item => {
             if (item.title === p.title && item.desc === p.desc) {
               if (item.type === 'blender' && p.type === 'blender') {
@@ -158,8 +153,10 @@ function appendStoredProjects(){
             if(!confirm('Supprimer ce projet ?')) return;
             arr.splice(idx,1);
             localStorage.setItem('projects', JSON.stringify(arr));
+            // إزالة العنصر من DOM
             div.remove();
           } else {
+            // fallback: إعادة تحميل الصفحة لتحديث القائمة
             if(confirm('Impossible de supprimer précisément cet élément localement. Voulez-vous recharger la page ?')) {
               location.reload();
             }
@@ -173,8 +170,7 @@ function appendStoredProjects(){
       wrapper.appendChild(removeBtn);
       div.appendChild(wrapper);
 
-      // 🔥 نضيف المشروع في الأعلى بدل الأسفل
-      container.prepend(div);
+      container.appendChild(div);
     });
 
   } catch(e){
