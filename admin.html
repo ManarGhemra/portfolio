@@ -70,14 +70,14 @@
       // Récupérer les projets existants (sécurisé avec try/catch)
       let arr = [];
       try {
-        arr = JSON.parse(localStorage.getItem('projets')) || [];
+        arr = JSON.parse(localStorage.getItem('projects')) || [];
       } catch(e){
         arr = [];
       }
 
       // Ajouter le nouveau projet en tête (recent en premier)
-      arr.unshift({ titre: title, description: desc, lien: link });
-      localStorage.setItem('projets', JSON.stringify(arr));
+      arr.unshift({ title, desc, link });
+      localStorage.setItem('projects', JSON.stringify(arr));
 
       // Réinitialiser champs
       document.getElementById('title').value = '';
@@ -92,7 +92,7 @@
       const list = document.getElementById('currentList');
       let arr = [];
       try {
-        arr = JSON.parse(localStorage.getItem('projets')) || [];
+        arr = JSON.parse(localStorage.getItem('projects')) || [];
       } catch(e){
         arr = [];
       }
@@ -102,9 +102,9 @@
       }
       list.innerHTML = arr.map((p,idx)=>`
         <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 6px;border-radius:8px;background:rgba(255,255,255,0.02);margin-bottom:8px">
-          <div style="flex:1"><strong>${escapeHtml(p.titre)}</strong><div class="muted" style="font-size:0.9rem">${escapeHtml(p.description)}</div></div>
+          <div style="flex:1"><strong>${escapeHtml(p.title)}</strong><div class="muted" style="font-size:0.9rem">${escapeHtml(p.desc)}</div></div>
           <div style="display:flex;gap:8px;margin-left:12px">
-            <a class="btn ghost" href="${escapeAttr(p.lien)}" target="_blank">Ouvrir</a>
+            <a class="btn ghost" href="${escapeAttr(p.link)}" target="_blank">Ouvrir</a>
             <button class="btn ghost" onclick="removeAt(${idx})">Suppr</button>
           </div>
         </div>
@@ -113,17 +113,17 @@
 
     function removeAt(i){
       let arr = [];
-      try { arr = JSON.parse(localStorage.getItem('projets')) || []; } catch(e){ arr = []; }
+      try { arr = JSON.parse(localStorage.getItem('projects')) || []; } catch(e){ arr = []; }
       if(!arr[i]) return;
       if(!confirm('Supprimer ce projet ?')) return;
       arr.splice(i,1);
-      localStorage.setItem('projets', JSON.stringify(arr));
+      localStorage.setItem('projects', JSON.stringify(arr));
       renderList();
     }
 
     function clearAll(){
       if(!confirm('Supprimer tous les projets ?')) return;
-      localStorage.removeItem('projets');
+      localStorage.removeItem('projects');
       renderList();
       alert('Tous les projets supprimés.');
     }
