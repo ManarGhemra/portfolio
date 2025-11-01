@@ -1,22 +1,24 @@
-function escapeHtml(s){
-  if(!s) return '';
+// ======== Fonction pour sécuriser le texte =========
+function escapeHtml(s){ 
+  if(!s) return ''; 
   return s.replace(/[&<>"']/g, m => ({
     '&':'&amp;',
     '<':'&lt;',
     '>':'&gt;',
     '"':'&quot;',
-    "'":'&#39;'
-  }[m]));
+    "'": '&#39;'
+  }[m])); 
 }
 
+// ======== Crée un élément projet dynamique =========
 function appendOneProject(p){
   const div = document.createElement('div');
   div.className = 'project-card dynamic';
 
   const titleEl = document.createElement('h3');
-  titleEl.textContent = p.title || '';
+  titleEl.textContent = escapeHtml(p.title || '');
   const descEl = document.createElement('p');
-  descEl.textContent = p.desc || '';
+  descEl.textContent = escapeHtml(p.desc || '');
 
   let actionElem;
   if(p.type === 'blender'){
@@ -53,6 +55,7 @@ function appendOneProject(p){
 
   div.appendChild(titleEl);
   div.appendChild(descEl);
+
   if(p.type === 'blender'){
     const tag = document.createElement('div');
     tag.style.fontSize='0.85rem';
@@ -60,10 +63,12 @@ function appendOneProject(p){
     tag.textContent='📁 Modèle 3D';
     div.appendChild(tag);
   }
+
   div.appendChild(actionElem);
   return div;
 }
 
+// ======== Render tous les projets dynamiques =========
 function renderProjects(){
   const container = document.getElementById('project-list');
   if(!container) return;
@@ -76,16 +81,18 @@ function renderProjects(){
 
   // نقرأ جميع المشاريع من localStorage
   let stored = [];
-  try { stored = JSON.parse(localStorage.getItem('projects')) || []; } catch(e){ stored = []; }
+  try {
+    stored = JSON.parse(localStorage.getItem('projects')) || [];
+  } catch(e){ stored = []; }
 
-  // نضيف كل مشروع ديناميكي
+  // نضيف كل مشروع ديناميكي بعد المشاريع الأصلية
   stored.forEach(p=>{
     const el = appendOneProject(p);
     container.appendChild(el);
   });
 }
 
-// تشغيل عند تحميل الصفحة
+// ======== تشغيل عند تحميل الصفحة =========
 document.addEventListener('DOMContentLoaded', ()=>{
   renderProjects();
 });
