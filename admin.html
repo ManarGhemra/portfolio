@@ -86,11 +86,9 @@
       if (projectType === 'link') {
         linkInput.style.display = 'block';
         fileInputContainer.style.display = 'none';
-        linkInput.required = true;
       } else {
         linkInput.style.display = 'none';
         fileInputContainer.style.display = 'block';
-        linkInput.required = false;
       }
     }
 
@@ -114,6 +112,9 @@
         }
         projectData.link = link;
         projectData.type = 'link';
+        
+        // حفظ المشروع مباشرة
+        saveProject(projectData);
       } else {
         const fileInput = document.getElementById('blendFile');
         if(!fileInput.files.length){ 
@@ -138,30 +139,15 @@
           projectData.fileName = file.name;
           projectData.type = 'blender';
           
-          let arr = [];
-          try {
-            arr = JSON.parse(localStorage.getItem('projects')) || [];
-          } catch(e){
-            arr = [];
-          }
-
-          arr.unshift(projectData);
-          localStorage.setItem('projects', JSON.stringify(arr));
-
-          document.getElementById('title').value = '';
-          document.getElementById('desc').value = '';
-          document.getElementById('link').value = '';
-          document.getElementById('blendFile').value = '';
-          document.querySelector('input[name="projectType"][value="link"]').checked = true;
-          toggleProjectType();
-
-          renderList();
-          alert('Projet ajouté ✅');
+          // حفظ المشروع بعد قراءة الملف
+          saveProject(projectData);
         };
         reader.readAsDataURL(file);
         return;
       }
+    }
 
+    function saveProject(projectData) {
       let arr = [];
       try {
         arr = JSON.parse(localStorage.getItem('projects')) || [];
@@ -172,6 +158,7 @@
       arr.unshift(projectData);
       localStorage.setItem('projects', JSON.stringify(arr));
 
+      // Réinitialiser champs
       document.getElementById('title').value = '';
       document.getElementById('desc').value = '';
       document.getElementById('link').value = '';
@@ -200,10 +187,10 @@
           <div style="flex:1">
             <strong>${escapeHtml(p.title)}</strong>
             <div class="muted" style="font-size:0.9rem">${escapeHtml(p.desc)}</div>
-            ${p.type === 'blender' ? '<div style="font-size:0.8rem;color:#7c4dff">📁 Fichier 3D</div>' : ''}
+            ${p.type === 'blender' ? '<div style="font-size:0.8rem;color:#7c4dff">📁 Modèle 3D</div>' : ''}
           </div>
           <div style="display:flex;gap:8px;margin-left:12px">
-            <button class="btn ghost" onclick="removeAt(${idx})">Suppr</button>
+            <button class="btn ghost" onclick="removeAt(${idx})">Supprimer</button>
           </div>
         </div>
       `).join('');
@@ -231,7 +218,6 @@
       if(!s) return ''; 
       return s.replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); 
     }
-    function escapeAttr(s){ return s ? s.replace(/"/g,'&quot;') : '#'; }
 
     function isValidUrl(s){
       try {
