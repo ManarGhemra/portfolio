@@ -132,7 +132,7 @@
           return;
         }
         
-        // تخزين الملف كـ Blob في localStorage
+        // تخزين الملف كـ Data URL في localStorage
         const reader = new FileReader();
         reader.onload = function(e) {
           projectData.fileData = e.target.result;
@@ -190,27 +190,6 @@
       alert('Projet ajouté ✅');
     }
 
-    function downloadBlenderFile(fileData, fileName) {
-      // تحويل البيانات إلى Blob
-      const byteCharacters = atob(fileData.split(',')[1]);
-      const byteNumbers = new Array(byteCharacters.length);
-      for (let i = 0; i < byteCharacters.length; i++) {
-        byteNumbers[i] = byteCharacters.charCodeAt(i);
-      }
-      const byteArray = new Uint8Array(byteNumbers);
-      const blob = new Blob([byteArray], {type: 'application/octet-stream'});
-      
-      // إنشاء رابط تحميل تلقائي
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = fileName;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-    }
-
     function renderList(){
       const list = document.getElementById('currentList');
       let arr = [];
@@ -231,10 +210,9 @@
             ${p.type === 'blender' ? '<div style="font-size:0.8rem;color:#7c4dff">📁 Fichier Blender</div>' : ''}
           </div>
           <div style="display:flex;gap:8px;margin-left:12px">
-            ${p.type === 'blender' ? 
-              `<button class="btn ghost" onclick="downloadBlenderFile('${p.fileData}', '${p.fileName}')">Télécharger</button>` : 
-              `<a class="btn ghost" href="${escapeAttr(p.link)}" target="_blank">Ouvrir</a>`
-            }
+            <a class="btn ghost" href="${p.type === 'blender' ? '#' : escapeAttr(p.link)}" ${p.type === 'link' ? 'target="_blank"' : ''}>
+              ${p.type === 'blender' ? 'Télécharger' : 'Ouvrir'}
+            </a>
             <button class="btn ghost" onclick="removeAt(${idx})">Suppr</button>
           </div>
         </div>
