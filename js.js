@@ -56,7 +56,4 @@ function loadDynamicProjects() {
   }
 }
 
-// تحميل المشاريع عند بدء التشغيل
-document.addEventListener('DOMContentLoaded', function() {
-  loadDynamicProjects();
-});s
+loadDynamicProjects();
