@@ -12,32 +12,39 @@ function escapeHtml(s){
 }
 
 function downloadBlenderFile(fileData, fileName) {
-  // تحويل البيانات إلى Blob
-  const byteCharacters = atob(fileData.split(',')[1]);
-  const byteNumbers = new Array(byteCharacters.length);
-  for (let i = 0; i < byteCharacters.length; i++) {
-    byteNumbers[i] = byteCharacters.charCodeAt(i);
+  try {
+    // تحويل البيانات إلى Blob
+    const byteCharacters = atob(fileData.split(',')[1]);
+    const byteNumbers = new Array(byteCharacters.length);
+    for (let i = 0; i < byteCharacters.length; i++) {
+      byteNumbers[i] = byteCharacters.charCodeAt(i);
+    }
+    const byteArray = new Uint8Array(byteNumbers);
+    const blob = new Blob([byteArray], {type: 'application/octet-stream'});
+    
+    // إنشاء رابط تحميل تلقائي
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = fileName || 'projet.blend';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  } catch(e) {
+    console.error('Erreur lors du téléchargement:', e);
+    alert('Erreur lors du téléchargement du fichier');
   }
-  const byteArray = new Uint8Array(byteNumbers);
-  const blob = new Blob([byteArray], {type: 'application/octet-stream'});
-  
-  // إنشاء رابط تحميل تلقائي
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = fileName;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
 }
 
-function handleProjectClick(event, project) {
-  if (project.type === 'blender') {
-    event.preventDefault(); // منع السلوك الافتراضي
-    downloadBlenderFile(project.fileData, project.fileName);
+function handleProjectClick(event, projectData) {
+  if (projectData.type === 'blender') {
+    event.preventDefault();
+    downloadBlenderFile(projectData.fileData, projectData.fileName);
+    return false;
   }
-  // إذا كان رابط عادي، يترك السلوك الافتراضي يفتح الرابط في نافذة جديدة
+  // Pour les liens normaux, laisser le comportement par défaut
+  return true;
 }
 
 function revealOnScroll(){
@@ -66,16 +73,24 @@ function appendStoredProjects(){
                                .map(h=>h.textContent.trim());
 
     stored.forEach(p=>{
-      if (existingTitles.includes(p.title.trim())) return; // ✅ لا نكرر نفس المشروع
+      if (existingTitles.includes(p.title.trim())) return;
 
       const div = document.createElement('div');
       div.className = 'project-card';
       
-      // تحديد الزر بناءً على نوع المشروع
+      // إعداد البيانات للمشروع
+      const projectData = {
+        type: p.type,
+        fileData: p.fileData,
+        fileName: p.fileName,
+        link: p.link
+      };
+      
+      // إنشاء الزر مع البيانات المضمنة
       let buttonHTML = '';
       if (p.type === 'blender') {
         buttonHTML = `
-          <a href="#" class="btn ghost" onclick="handleProjectClick(event, ${escapeHtml(JSON.stringify(p))})">
+          <a href="#" class="btn ghost" onclick="handleProjectClick(event, ${escapeHtml(JSON.stringify(projectData)).replace(/"/g, '&quot;')})">
             Voir le projet
           </a>
         `;
@@ -83,10 +98,11 @@ function appendStoredProjects(){
         buttonHTML = `<a href="${p.link}" target="_blank" class="btn ghost">Voir le projet</a>`;
       }
       
+      // إخفاء اسم الملف من الواجهة - فقط إشارة إلى أنه ملف Blender
       div.innerHTML = `
         <h3>${escapeHtml(p.title)}</h3>
         <p>${escapeHtml(p.desc)}</p>
-        ${p.type === 'blender' ? '<p style="font-size:0.9rem;color:#7c4dff">📁 Fichier Blender</p>' : ''}
+        ${p.type === 'blender' ? '<p style="font-size:0.9rem;color:#7c4dff">📁 Fichier 3D</p>' : ''}
         ${buttonHTML}
       `;
       container.appendChild(div);
