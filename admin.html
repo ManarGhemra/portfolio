@@ -5,9 +5,41 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Admin — Ajouter un projet</title>
   <link rel="stylesheet" href="css.css">
+  <style>
+    .admin-container {
+      max-width: 500px;
+      margin: 80px auto;
+      background: rgba(255,255,255,0.1);
+      backdrop-filter: blur(10px);
+      border-radius: 15px;
+      padding: 25px;
+      color: white;
+      box-shadow: 0 0 20px rgba(255,255,255,0.2);
+    }
+    label { display:block; margin-top:15px; font-weight:bold; }
+    input, textarea, button {
+      width:100%; margin-top:5px;
+      padding:10px; border:none; border-radius:8px;
+      font-size:15px;
+    }
+    input, textarea { background: rgba(255,255,255,0.15); color:white; }
+    button {
+      margin-top:20px;
+      background: linear-gradient(45deg, #ff00cc, #3333ff);
+      color:white; cursor:pointer;
+      transition:0.3s;
+    }
+    button:hover { opacity:0.8; }
+  </style>
 </head>
 <body>
-  <div class="admin-container">
+  <div class="admin-container" id="loginContainer">
+    <h2>🔒 Connexion Admin</h2>
+    <input type="password" id="password" placeholder="Mot de passe">
+    <button id="loginBtn">Entrer</button>
+  </div>
+
+  <div class="admin-container" id="adminPanel" style="display:none;">
     <h1>Ajouter un projet</h1>
     <form id="addProjectForm">
       <label>Titre du projet</label>
@@ -19,14 +51,26 @@
       <label>Lien du projet (optionnel)</label>
       <input type="url" id="link" placeholder="https://...">
 
-      <label>Fichier du projet (.blend ou .zip)</label>
-      <input type="file" id="file" accept=".blend,.zip" required>
+      <label>Image / Fichier Render (.jpg .png .blend .zip)</label>
+      <input type="file" id="file" accept=".jpg,.jpeg,.png,.blend,.zip" required>
 
       <button type="submit">Ajouter le projet</button>
     </form>
   </div>
 
   <script>
+  const PASSWORD = "manar2025";
+
+  document.getElementById("loginBtn").addEventListener("click", () => {
+    const input = document.getElementById("password").value.trim();
+    if (input === PASSWORD) {
+      document.getElementById("loginContainer").style.display = "none";
+      document.getElementById("adminPanel").style.display = "block";
+    } else {
+      alert("Mot de passe incorrect !");
+    }
+  });
+
   document.getElementById('addProjectForm').addEventListener('submit', async (e) => {
     e.preventDefault();
     const title = document.getElementById('title').value.trim();
@@ -37,14 +81,13 @@
 
     if (!file) return alert("Veuillez choisir un fichier.");
 
-    // نحول الملف إلى base64 باش نخزنه
     const fileData = await toBase64(file);
-
     const project = {
       title,
       desc,
       link,
       fileName: file.name,
+      fileType: file.type,
       fileData
     };
 
