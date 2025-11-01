@@ -26,7 +26,7 @@
 
         <input id="title" placeholder="Titre du projet" style="width:100%;padding:10px;margin:6px 0;border-radius:8px;background:transparent;border:1px solid rgba(255,255,255,0.04);color:inherit">
         <input id="desc" placeholder="Courte description" style="width:100%;padding:10px;margin:6px 0;border-radius:8px;background:transparent;border:1px solid rgba(255,255,255,0.04);color:inherit">
-
+        
         <!-- خيارات رفع المشروع -->
         <div style="margin:12px 0">
           <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
@@ -38,10 +38,10 @@
             Fichier Blender (.blend)
           </label>
         </div>
-
+        
         <!-- حقل الرابط -->
         <input id="link" placeholder="Lien du projet (https://...)" style="width:100%;padding:10px;margin:6px 0;border-radius:8px;background:transparent;border:1px solid rgba(255,255,255,0.04);color:inherit">
-
+        
         <!-- حقل ملف Blender -->
         <div id="fileInputContainer" style="display:none">
           <input type="file" id="blendFile" accept=".blend" style="width:100%;padding:10px;margin:6px 0;border-radius:8px;background:transparent;border:1px solid rgba(255,255,255,0.04);color:inherit">
@@ -112,6 +112,8 @@
         }
         projectData.link = link;
         projectData.type = 'link';
+        
+        // حفظ المشروع مباشرة
         saveProject(projectData);
       } else {
         const fileInput = document.getElementById('blendFile');
@@ -125,6 +127,7 @@
           alert('Le fichier est trop volumineux (max 10MB) !');
           return;
         }
+        
         if (!file.name.toLowerCase().endsWith('.blend')) {
           alert('Veuillez sélectionner un fichier Blender (.blend) !');
           return;
@@ -135,45 +138,70 @@
           projectData.fileData = e.target.result;
           projectData.fileName = file.name;
           projectData.type = 'blender';
+          
+          // حفظ المشروع بعد قراءة الملف
           saveProject(projectData);
         };
         reader.readAsDataURL(file);
+        return;
       }
     }
 
     function saveProject(projectData) {
-      let arr = JSON.parse(localStorage.getItem('projects') || '[]');
-      arr.unshift(projectData); // أضف الجديد في المقدمة
+      let arr = [];
+      try {
+        arr = JSON.parse(localStorage.getItem('projects')) || [];
+      } catch(e){
+        arr = [];
+      }
+
+      arr.unshift(projectData);
       localStorage.setItem('projects', JSON.stringify(arr));
+
+      // Réinitialiser champs
+      document.getElementById('title').value = '';
+      document.getElementById('desc').value = '';
+      document.getElementById('link').value = '';
+      document.getElementById('blendFile').value = '';
+      document.querySelector('input[name="projectType"][value="link"]').checked = true;
+      toggleProjectType();
+
       renderList();
       alert('Projet ajouté ✅');
     }
 
     function renderList(){
       const list = document.getElementById('currentList');
-      const arr = JSON.parse(localStorage.getItem('projects') || '[]');
-      
+      let arr = [];
+      try {
+        arr = JSON.parse(localStorage.getItem('projects')) || [];
+      } catch(e){
+        arr = [];
+      }
       if(arr.length === 0){
         list.innerHTML = '<p class="muted">Aucun projet enregistré.</p>';
         return;
       }
-
       list.innerHTML = arr.map((p,idx)=>`
-        <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 6px;border-radius:8px;background:rgba(255,255,255,0.05);margin-bottom:8px">
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 6px;border-radius:8px;background:rgba(255,255,255,0.02);margin-bottom:8px">
           <div style="flex:1">
             <strong>${escapeHtml(p.title)}</strong>
             <div class="muted" style="font-size:0.9rem">${escapeHtml(p.desc)}</div>
             ${p.type === 'blender' ? '<div style="font-size:0.8rem;color:#7c4dff">📁 Modèle 3D</div>' : ''}
-            ${p.link ? `<a href="${p.link}" target="_blank" style="color:#5ae;text-decoration:underline;font-size:0.85rem">Voir le projet</a>` : ''}
           </div>
-          <button class="btn ghost" onclick="removeAt(${idx})">Supprimer</button>
+          <div style="display:flex;gap:8px;margin-left:12px">
+            <button class="btn ghost" onclick="removeAt(${idx})">Supprimer</button>
+          </div>
         </div>
       `).join('');
     }
 
     function removeAt(i){
-      const arr = JSON.parse(localStorage.getItem('projects') || '[]');
+      let arr = [];
+      try { arr = JSON.parse(localStorage.getItem('projects')) || []; } catch(e){ arr = []; }
+      if(!arr[i]) return;
       if(!confirm('Supprimer ce projet ?')) return;
+      
       arr.splice(i,1);
       localStorage.setItem('projects', JSON.stringify(arr));
       renderList();
@@ -195,11 +223,14 @@
       try {
         const u = new URL(s);
         return u.protocol === 'http:' || u.protocol === 'https:';
-      } catch(e){ return false; }
+      } catch(e){
+        return false;
+      }
     }
 
-    document.addEventListener('DOMContentLoaded', toggleProjectType);
-    window.addEventListener('load', renderList);
+    document.addEventListener('DOMContentLoaded', ()=> {
+      toggleProjectType();
+    });
   </script>
 </body>
 </html>
