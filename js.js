@@ -1,4 +1,4 @@
-// js.js - version corrigée (ajout projets sans suppression des anciens)
+// js.js - version finale corrigée (ajout projets sans suppression des anciens)
 
 function escapeHtml(s){
   if(!s) return '';
@@ -172,13 +172,13 @@ function appendOneProject(p, prepend = false){
   else container.appendChild(div);
 }
 
-/* ✅ Fonction pour charger tous les projets existants */
+/* ✅ Fonction pour charger tous les projets existants (sans supprimer les anciens) */
 function appendStoredProjects(){
   try {
     const stored = JSON.parse(localStorage.getItem('projects')) || [];
     const container = document.getElementById('project-list');
     if(!container) return;
-    container.innerHTML = ''; // نبدأ من الصفر ثم نعرض كل المشاريع
+    // ❌ Ne pas vider le contenu existant !
     stored.forEach(p => appendOneProject(p, false));
   } catch(e){
     console.error('Erreur lors du chargement des projets', e);
