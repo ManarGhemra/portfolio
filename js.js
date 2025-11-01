@@ -61,117 +61,89 @@ function appendStoredProjects(){
   try {
     const stored = JSON.parse(localStorage.getItem('projects')) || [];
     const container = document.getElementById('project-list');
-    if(!container || stored.length === 0) return;
+    if(!container) return;
 
-    // إزالة المشاريع الافتراضية القديمة أولاً
-    const defaultProjects = [
-      'Chatbot universitaire',
-      'API REST avec FastAPI', 
-      'Site web de shopping',
-      'Site web de prévisions météorologiques',
-      'Site scientifique sur l\'espace',
-      'Portfolio personnel'
-    ];
-    
-    defaultProjects.forEach(title => {
-      const existingProject = Array.from(container.querySelectorAll('.project-card h3'))
-        .find(h3 => h3.textContent.trim() === title);
-      if (existingProject) {
-        existingProject.closest('.project-card').remove();
-      }
-    });
+    // تنظيف الحاوية أولاً
+    container.innerHTML = '';
 
-    // إضافة المشاريع المخزنة
+    // إضافة المشاريع المخزنة أولاً (الأحدث أولاً)
     stored.forEach(p => {
       const div = document.createElement('div');
       div.className = 'project-card';
       
-      // إنشاء زر/رابط "Voir le projet" بطريقة آمنة (بدون تضمين fileData داخل onclick كسلسلة)
-      let actionElem = null;
-
+      let buttonHTML = '';
       if (p.type === 'blender') {
-        // عنصر رابط لكن سنمنع الـ href من تمرير البيانات، ونستخدم مستمع حدث لتمرير fileData بأمان
-        const a = document.createElement('a');
-        a.href = '#';
-        a.className = 'btn ghost';
-        a.textContent = 'Voir le projet';
-        // ربط مستمع الحدث الذي يمرّر البيانات عبر closure (آمن)
-        a.addEventListener('click', function(evt){
-          handleBlenderProject(evt, p.fileData, p.fileName);
-        });
-        actionElem = a;
+        buttonHTML = `
+          <a href="#" class="btn ghost" onclick="handleBlenderProject(event, '${p.fileData}', '${p.fileName}')">
+            Voir le projet
+          </a>
+        `;
       } else {
-        const a = document.createElement('a');
-        a.href = p.link || '#';
-        a.target = '_blank';
-        a.className = 'btn ghost';
-        a.textContent = 'Voir le projet';
-        actionElem = a;
+        buttonHTML = `<a href="${p.link}" target="_blank" class="btn ghost">Voir le projet</a>`;
       }
-
-      // تركيب المحتوى داخل البطاقة
-      const titleEl = document.createElement('h3');
-      titleEl.textContent = p.title || '';
-      const descEl = document.createElement('p');
-      descEl.textContent = p.desc || '';
-      div.appendChild(titleEl);
-      div.appendChild(descEl);
-
-      if (p.type === 'blender') {
-        const tag = document.createElement('div');
-        tag.style.fontSize = '0.9rem';
-        tag.style.color = '#7c4dff';
-        tag.textContent = '📁 Modèle 3D';
-        div.appendChild(tag);
-      }
-
-      // إضافة زر/رابط العملية ثم زر الحذف
-      const wrapper = document.createElement('div');
-      wrapper.style.display = 'flex';
-      wrapper.style.gap = '8px';
-      wrapper.style.marginTop = '8px';
-      wrapper.appendChild(actionElem);
-
-      const removeBtn = document.createElement('button');
-      removeBtn.className = 'btn ghost';
-      removeBtn.textContent = 'Supprimer';
-      removeBtn.addEventListener('click', function(){
-        // إزالة المشروع من التخزين المحلي بناءً على عنوان و وصف و/أو filename للتفريق
-        try {
-          let arr = JSON.parse(localStorage.getItem('projects')) || [];
-          // نبحث عن العنصر المطابق بالمؤشر الأول الذي يطابق العنوان والdesc و (filename إن وُجد)
-          const idx = arr.findIndex(item => {
-            if (item.title === p.title && item.desc === p.desc) {
-              if (item.type === 'blender' && p.type === 'blender') {
-                return item.fileName === p.fileName;
-              }
-              return item.type === p.type && item.link === p.link;
-            }
-            return false;
-          });
-          if (idx !== -1) {
-            if(!confirm('Supprimer ce projet ?')) return;
-            arr.splice(idx,1);
-            localStorage.setItem('projects', JSON.stringify(arr));
-            // إزالة العنصر من DOM
-            div.remove();
-          } else {
-            // fallback: إعادة تحميل الصفحة لتحديث القائمة
-            if(confirm('Impossible de supprimer précisément cet élément localement. Voulez-vous recharger la page ?')) {
-              location.reload();
-            }
-          }
-        } catch(err) {
-          console.error('Erreur suppression:', err);
-          alert('Erreur lors de la suppression du projet');
-        }
-      });
-
-      wrapper.appendChild(removeBtn);
-      div.appendChild(wrapper);
-
+      
+      div.innerHTML = `
+        <h3>${escapeHtml(p.title)}</h3>
+        <p>${escapeHtml(p.desc)}</p>
+        ${p.type === 'blender' ? '<div style="font-size:0.9rem;color:#7c4dff">📁 Modèle 3D</div>' : ''}
+        ${buttonHTML}
+      `;
       container.appendChild(div);
     });
+
+    // إضافة المشاريع الافتراضية فقط إذا لم تكن هناك مشاريع مخزنة
+    if (stored.length === 0) {
+      const defaultProjects = [
+        {
+          title: 'Chatbot universitaire',
+          desc: 'Répond aux questions concernant la faculté.',
+          link: '#',
+          type: 'link'
+        },
+        {
+          title: 'API REST avec FastAPI',
+          desc: 'Fusion de plusieurs fichiers PDF.',
+          link: '#',
+          type: 'link'
+        },
+        {
+          title: 'Site web de shopping',
+          desc: 'Produits féminins.',
+          link: '#',
+          type: 'link'
+        },
+        {
+          title: 'Site web de prévisions météorologiques',
+          desc: 'Météo en temps réel.',
+          link: '#',
+          type: 'link'
+        },
+        {
+          title: 'Site scientifique sur l\'espace',
+          desc: 'Vulgarisation des découvertes spatiales.',
+          link: '#',
+          type: 'link'
+        },
+        {
+          title: 'Portfolio personnel',
+          desc: 'Mon site web moderne et responsive présentant mes projets et compétences.',
+          link: 'https://moccasin-issi-75.tiiny.site/',
+          type: 'link'
+        }
+      ];
+
+      defaultProjects.forEach(project => {
+        const div = document.createElement('div');
+        div.className = 'project-card';
+        
+        div.innerHTML = `
+          <h3>${escapeHtml(project.title)}</h3>
+          <p>${escapeHtml(project.desc)}</p>
+          <a href="${project.link}" target="_blank" class="btn ghost">Voir le projet</a>
+        `;
+        container.appendChild(div);
+      });
+    }
 
   } catch(e){
     console.error('Erreur lors du chargement des projets depuis localStorage', e);
