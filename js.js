@@ -41,10 +41,19 @@ function appendStoredProjects(){
 
       const div = document.createElement('div');
       div.className = 'project-card';
+      
+      // تحديد نص الزر بناءً على نوع المشروع
+      const buttonText = p.type === 'blender' ? 'Télécharger le fichier' : 'Voir le projet';
+      
       div.innerHTML = `
         <h3>${escapeHtml(p.title)}</h3>
         <p>${escapeHtml(p.desc)}</p>
-        <a href="${p.link}" target="_blank" class="btn ghost">Voir le projet</a>
+        ${p.type === 'blender' ? '<p style="font-size:0.9rem;color:#7c4dff">📁 Fichier Blender</p>' : ''}
+        <a href="${p.link}" 
+           ${p.type === 'blender' ? `download="${p.fileName || 'project.blend'}"` : 'target="_blank"'} 
+           class="btn ghost">
+          ${buttonText}
+        </a>
       `;
       container.appendChild(div);
     });
