@@ -1,6 +1,6 @@
-// js.js - Gestion complète des projets du portfolio
+// js.js — Gestion des projets du portfolio
 
-// Fonction pour échapper les caractères HTML
+// Échapper les caractères HTML
 function escapeHtml(s){
   if(!s) return '';
   return s.replace(/[&<>"']/g, m => ({
@@ -12,16 +12,16 @@ function escapeHtml(s){
   }[m]));
 }
 
-// Télécharger un fichier Blender depuis les données stockées
-function downloadBlenderFile(fileData, fileName) {
-  try {
+// Télécharger un fichier Blender depuis dataURL
+function downloadBlenderFile(fileData, fileName){
+  try{
     const byteCharacters = atob(fileData.split(',')[1]);
     const byteNumbers = new Array(byteCharacters.length);
-    for (let i = 0; i < byteCharacters.length; i++) {
+    for(let i=0;i<byteCharacters.length;i++){
       byteNumbers[i] = byteCharacters.charCodeAt(i);
     }
     const byteArray = new Uint8Array(byteNumbers);
-    const blob = new Blob([byteArray], {type: 'application/octet-stream'});
+    const blob = new Blob([byteArray], {type:'application/octet-stream'});
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
@@ -30,35 +30,19 @@ function downloadBlenderFile(fileData, fileName) {
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
-  } catch(e) {
-    console.error('Erreur lors du téléchargement:', e);
+  }catch(e){
+    console.error('Erreur téléchargement:',e);
     alert('Erreur lors du téléchargement du fichier');
   }
 }
 
-// Gestion d’un projet Blender cliqué
-function handleBlenderProject(event, fileData, fileName) {
-  event.preventDefault();
-  downloadBlenderFile(fileData, fileName);
+// Affichage d’un projet Blender
+function handleBlenderProject(evt,fileData,fileName){
+  evt.preventDefault();
+  downloadBlenderFile(fileData,fileName);
 }
 
-// Animation reveal à l’apparition
-function revealOnScroll(){
-  document.querySelectorAll('.reveal').forEach(el=>{
-    const r = el.getBoundingClientRect();
-    if(r.top < window.innerHeight - 80) el.classList.add('visible');
-  });
-}
-
-// Setup boutons print/download
-function setupActions(){
-  const printBtn = document.getElementById('printBtn');
-  const downloadBtn = document.getElementById('downloadBtn');
-  if(printBtn) printBtn.addEventListener('click', ()=> window.print());
-  if(downloadBtn) downloadBtn.addEventListener('click', ()=> window.print());
-}
-
-// Ajouter un projet au DOM (sans effacer les autres)
+// Ajouter un projet dynamique à la page (index.html)
 function appendOneProject(p){
   const container = document.getElementById('project-list');
   if(!container) return;
@@ -66,87 +50,63 @@ function appendOneProject(p){
   const div = document.createElement('div');
   div.className = 'project-card';
 
-  let actionElem = null;
-
-  if (p.type === 'blender') {
-    const a = document.createElement('a');
-    a.href = '#';
-    a.className = 'btn ghost';
-    a.textContent = 'Voir le projet';
-    a.addEventListener('click', function(evt){
-      handleBlenderProject(evt, p.fileData, p.fileName);
-    });
-    actionElem = a;
-  } else {
-    const a = document.createElement('a');
-    a.href = p.link || '#';
-    a.target = '_blank';
-    a.className = 'btn ghost';
-    a.textContent = 'Voir le projet';
-    actionElem = a;
-  }
-
   const titleEl = document.createElement('h3');
   titleEl.textContent = p.title || '';
   const descEl = document.createElement('p');
   descEl.textContent = p.desc || '';
-  div.appendChild(titleEl);
-  div.appendChild(descEl);
 
-  if (p.type === 'blender') {
-    const tag = document.createElement('div');
-    tag.style.fontSize = '0.9rem';
-    tag.style.color = '#7c4dff';
-    tag.textContent = '📁 Modèle 3D';
-    div.appendChild(tag);
+  let actionElem;
+  if(p.type === 'blender'){
+    actionElem = document.createElement('a');
+    actionElem.href = '#';
+    actionElem.className = 'btn ghost';
+    actionElem.textContent = 'Voir le projet';
+    actionElem.addEventListener('click', e=> handleBlenderProject(e,p.fileData,p.fileName));
+  }else{
+    actionElem = document.createElement('a');
+    actionElem.href = p.link || '#';
+    actionElem.target = '_blank';
+    actionElem.className = 'btn ghost';
+    actionElem.textContent = 'Voir le projet';
   }
 
-  const wrapper = document.createElement('div');
-  wrapper.style.display = 'flex';
-  wrapper.style.gap = '8px';
-  wrapper.style.marginTop = '8px';
-  wrapper.appendChild(actionElem);
-
-  const removeBtn = document.createElement('button');
-  removeBtn.className = 'btn ghost';
-  removeBtn.textContent = 'Supprimer';
-  removeBtn.addEventListener('click', function(){
-    try {
-      let arr = JSON.parse(localStorage.getItem('projects')) || [];
-      const idx = arr.findIndex(item => {
-        if (item.title === p.title && item.desc === p.desc) {
-          if (item.type === 'blender' && p.type === 'blender') {
-            return item.fileName === p.fileName;
-          }
-          return item.type === p.type && item.link === p.link;
-        }
-        return false;
-      });
-      if (idx !== -1) {
-        if(!confirm('Supprimer ce projet ?')) return;
-        arr.splice(idx,1);
-        localStorage.setItem('projects', JSON.stringify(arr));
-        div.remove();
-      }
-    } catch(err) {
-      console.error('Erreur suppression:', err);
-      alert('Erreur lors de la suppression du projet');
-    }
-  });
-
-  wrapper.appendChild(removeBtn);
-  div.appendChild(wrapper);
+  div.appendChild(titleEl);
+  div.appendChild(descEl);
+  if(p.type==='blender'){
+    const tag = document.createElement('div');
+    tag.style.fontSize='0.9rem';
+    tag.style.color='#7c4dff';
+    tag.textContent='📁 Modèle 3D';
+    div.appendChild(tag);
+  }
+  div.appendChild(actionElem);
   container.appendChild(div);
 }
 
-// Charger tous les projets stockés dans localStorage
+// Charger tous les projets dynamiques depuis localStorage
 function appendStoredProjects(){
-  try {
-    const stored = JSON.parse(localStorage.getItem('projects')) || [];
-    stored.forEach(p => appendOneProject(p));
-  } catch(e){
-    console.error('Erreur lors du chargement des projets depuis localStorage', e);
+  try{
+    const stored = JSON.parse(localStorage.getItem('projects'))||[];
+    stored.forEach(p=> appendOneProject(p));
+  }catch(e){
+    console.error('Erreur chargement projets:',e);
   }
+}
+
+// Impression / téléchargement CV
+function setupActions(){
+  const printBtn = document.getElementById('printBtn');
+  const downloadBtn = document.getElementById('downloadBtn');
+  if(printBtn) printBtn.addEventListener('click', ()=> window.print());
+  if(downloadBtn) downloadBtn.addEventListener('click', ()=> window.print());
+}
+
+// Animation reveal au scroll
+function revealOnScroll(){
+  document.querySelectorAll('.reveal').forEach(el=>{
+    const r = el.getBoundingClientRect();
+    if(r.top < window.innerHeight - 80) el.classList.add('visible');
+  });
 }
 
 document.addEventListener('DOMContentLoaded', ()=>{
