@@ -11,6 +11,27 @@ function escapeHtml(s){
   }[m]));
 }
 
+function downloadBlenderFile(fileData, fileName) {
+  // تحويل البيانات إلى Blob
+  const byteCharacters = atob(fileData.split(',')[1]);
+  const byteNumbers = new Array(byteCharacters.length);
+  for (let i = 0; i < byteCharacters.length; i++) {
+    byteNumbers[i] = byteCharacters.charCodeAt(i);
+  }
+  const byteArray = new Uint8Array(byteNumbers);
+  const blob = new Blob([byteArray], {type: 'application/octet-stream'});
+  
+  // إنشاء رابط تحميل تلقائي
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = fileName;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
 function revealOnScroll(){
   document.querySelectorAll('.reveal').forEach(el=>{
     const r = el.getBoundingClientRect();
@@ -42,18 +63,19 @@ function appendStoredProjects(){
       const div = document.createElement('div');
       div.className = 'project-card';
       
-      // تحديد نص الزر بناءً على نوع المشروع
-      const buttonText = p.type === 'blender' ? 'Télécharger le fichier' : 'Voir le projet';
+      // تحديد الزر بناءً على نوع المشروع
+      let buttonHTML = '';
+      if (p.type === 'blender') {
+        buttonHTML = `<button class="btn ghost" onclick="downloadBlenderFile('${p.fileData}', '${p.fileName}')">Télécharger le fichier</button>`;
+      } else {
+        buttonHTML = `<a href="${p.link}" target="_blank" class="btn ghost">Voir le projet</a>`;
+      }
       
       div.innerHTML = `
         <h3>${escapeHtml(p.title)}</h3>
         <p>${escapeHtml(p.desc)}</p>
         ${p.type === 'blender' ? '<p style="font-size:0.9rem;color:#7c4dff">📁 Fichier Blender</p>' : ''}
-        <a href="${p.link}" 
-           ${p.type === 'blender' ? `download="${p.fileName || 'project.blend'}"` : 'target="_blank"'} 
-           class="btn ghost">
-          ${buttonText}
-        </a>
+        ${buttonHTML}
       `;
       container.appendChild(div);
     });
