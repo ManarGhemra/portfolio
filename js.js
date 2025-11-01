@@ -25,7 +25,7 @@ function setupActions(){
   if(downloadBtn) downloadBtn.addEventListener('click', ()=> window.print());
 }
 
-// ✅ هذه هي الدالة الوحيدة التي تضيف المشاريع المخزنة
+// ✅ هذه هي الدالة التي تضيف المشاريع المخزنة في localStorage إلى الصفحة الرئيسية
 function appendStoredProjects(){
   try {
     const stored = JSON.parse(localStorage.getItem('projects')) || [];
@@ -34,28 +34,30 @@ function appendStoredProjects(){
 
     // نتأكد أننا لا نضيف المشاريع مرتين
     const existingTitles = Array.from(container.querySelectorAll('.project-card h3'))
-                               .map(h=>h.textContent.trim());
+      .map(el => el.textContent.trim().toLowerCase());
 
-    stored.forEach(p=>{
-      if (existingTitles.includes(p.title.trim())) return; // ✅ لا نكرر نفس المشروع
+    stored.forEach(p => {
+      if(!p.title || existingTitles.includes(p.title.trim().toLowerCase())) return;
 
-      const div = document.createElement('div');
-      div.className = 'project-card';
-      div.innerHTML = `
+      const card = document.createElement('div');
+      card.className = 'project-card';
+      card.innerHTML = `
         <h3>${escapeHtml(p.title)}</h3>
         <p>${escapeHtml(p.desc)}</p>
         <a href="${p.link}" target="_blank" class="btn ghost">Voir le projet</a>
       `;
-      container.appendChild(div);
+      container.prepend(card); // نضيفهم في الأعلى باش يبانوا كمشاريع جديدة
     });
   } catch(e){
-    console.error('Erreur lors du chargement des projets depuis localStorage', e);
+    console.error('Erreur chargement projets:', e);
   }
 }
 
+// ✅ عندما تجهز الصفحة
 document.addEventListener('DOMContentLoaded', ()=>{
-  appendStoredProjects();
-  setupActions();
   revealOnScroll();
-  window.addEventListener('scroll', revealOnScroll);
+  setupActions();
+  appendStoredProjects();
 });
+
+window.addEventListener('scroll', revealOnScroll);
