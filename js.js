@@ -1,6 +1,3 @@
-// js.js — Gestion des projets du portfolio
-
-// Échapper les caractères HTML
 function escapeHtml(s){
   if(!s) return '';
   return s.replace(/[&<>"']/g, m => ({
@@ -12,43 +9,9 @@ function escapeHtml(s){
   }[m]));
 }
 
-// Télécharger un fichier Blender depuis dataURL
-function downloadBlenderFile(fileData, fileName){
-  try{
-    const byteCharacters = atob(fileData.split(',')[1]);
-    const byteNumbers = new Array(byteCharacters.length);
-    for(let i=0;i<byteCharacters.length;i++){
-      byteNumbers[i] = byteCharacters.charCodeAt(i);
-    }
-    const byteArray = new Uint8Array(byteNumbers);
-    const blob = new Blob([byteArray], {type:'application/octet-stream'});
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = fileName || 'projet.blend';
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-  }catch(e){
-    console.error('Erreur téléchargement:',e);
-    alert('Erreur lors du téléchargement du fichier');
-  }
-}
-
-// Affichage d’un projet Blender
-function handleBlenderProject(evt,fileData,fileName){
-  evt.preventDefault();
-  downloadBlenderFile(fileData,fileName);
-}
-
-// Ajouter un projet dynamique à la page (index.html)
 function appendOneProject(p){
-  const container = document.getElementById('project-list');
-  if(!container) return;
-
   const div = document.createElement('div');
-  div.className = 'project-card';
+  div.className = 'project-card dynamic';
 
   const titleEl = document.createElement('h3');
   titleEl.textContent = p.title || '';
@@ -61,8 +24,26 @@ function appendOneProject(p){
     actionElem.href = '#';
     actionElem.className = 'btn ghost';
     actionElem.textContent = 'Voir le projet';
-    actionElem.addEventListener('click', e=> handleBlenderProject(e,p.fileData,p.fileName));
-  }else{
+    actionElem.addEventListener('click', e=>{
+      e.preventDefault();
+      try{
+        const byteCharacters = atob(p.fileData.split(',')[1]);
+        const byteNumbers = Array.from({length: byteCharacters.length}, (_,i)=>byteCharacters.charCodeAt(i));
+        const byteArray = new Uint8Array(byteNumbers);
+        const blob = new Blob([byteArray], {type:'application/octet-stream'});
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = p.fileName || 'projet.blend';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      }catch(err){
+        alert('Erreur téléchargement fichier');
+      }
+    });
+  } else {
     actionElem = document.createElement('a');
     actionElem.href = p.link || '#';
     actionElem.target = '_blank';
@@ -72,46 +53,39 @@ function appendOneProject(p){
 
   div.appendChild(titleEl);
   div.appendChild(descEl);
-  if(p.type==='blender'){
+  if(p.type === 'blender'){
     const tag = document.createElement('div');
-    tag.style.fontSize='0.9rem';
+    tag.style.fontSize='0.85rem';
     tag.style.color='#7c4dff';
     tag.textContent='📁 Modèle 3D';
     div.appendChild(tag);
   }
   div.appendChild(actionElem);
-  container.appendChild(div);
+  return div;
 }
 
-// Charger tous les projets dynamiques depuis localStorage
-function appendStoredProjects(){
-  try{
-    const stored = JSON.parse(localStorage.getItem('projects'))||[];
-    stored.forEach(p=> appendOneProject(p));
-  }catch(e){
-    console.error('Erreur chargement projets:',e);
-  }
-}
+function renderProjects(){
+  const container = document.getElementById('project-list');
+  if(!container) return;
 
-// Impression / téléchargement CV
-function setupActions(){
-  const printBtn = document.getElementById('printBtn');
-  const downloadBtn = document.getElementById('downloadBtn');
-  if(printBtn) printBtn.addEventListener('click', ()=> window.print());
-  if(downloadBtn) downloadBtn.addEventListener('click', ()=> window.print());
-}
+  // نحافظ على المشاريع الأصلية (HTML statique)
+  const staticProjects = Array.from(container.querySelectorAll('.project-card:not(.dynamic)'));
 
-// Animation reveal au scroll
-function revealOnScroll(){
-  document.querySelectorAll('.reveal').forEach(el=>{
-    const r = el.getBoundingClientRect();
-    if(r.top < window.innerHeight - 80) el.classList.add('visible');
+  // نمسح المشاريع الديناميكية القديمة
+  container.querySelectorAll('.project-card.dynamic').forEach(el=>el.remove());
+
+  // نقرأ جميع المشاريع من localStorage
+  let stored = [];
+  try { stored = JSON.parse(localStorage.getItem('projects')) || []; } catch(e){ stored = []; }
+
+  // نضيف كل مشروع ديناميكي
+  stored.forEach(p=>{
+    const el = appendOneProject(p);
+    container.appendChild(el);
   });
 }
 
+// تشغيل عند تحميل الصفحة
 document.addEventListener('DOMContentLoaded', ()=>{
-  appendStoredProjects();
-  setupActions();
-  revealOnScroll();
-  window.addEventListener('scroll', revealOnScroll);
+  renderProjects();
 });
