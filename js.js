@@ -1,5 +1,6 @@
-// js.js - comportement de la page index (reveal, print, ajout dynamique des projets si présents)
+// js.js - Gestion complète des projets du portfolio
 
+// Fonction pour échapper les caractères HTML
 function escapeHtml(s){
   if(!s) return '';
   return s.replace(/[&<>"']/g, m => ({
@@ -11,9 +12,9 @@ function escapeHtml(s){
   }[m]));
 }
 
+// Télécharger un fichier Blender depuis les données stockées
 function downloadBlenderFile(fileData, fileName) {
   try {
-    // تحويل البيانات إلى Blob
     const byteCharacters = atob(fileData.split(',')[1]);
     const byteNumbers = new Array(byteCharacters.length);
     for (let i = 0; i < byteCharacters.length; i++) {
@@ -21,8 +22,6 @@ function downloadBlenderFile(fileData, fileName) {
     }
     const byteArray = new Uint8Array(byteNumbers);
     const blob = new Blob([byteArray], {type: 'application/octet-stream'});
-    
-    // إنشاء رابط تحميل تلقائي
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
@@ -37,11 +36,13 @@ function downloadBlenderFile(fileData, fileName) {
   }
 }
 
+// Gestion d’un projet Blender cliqué
 function handleBlenderProject(event, fileData, fileName) {
   event.preventDefault();
   downloadBlenderFile(fileData, fileName);
 }
 
+// Animation reveal à l’apparition
 function revealOnScroll(){
   document.querySelectorAll('.reveal').forEach(el=>{
     const r = el.getBoundingClientRect();
@@ -49,6 +50,7 @@ function revealOnScroll(){
   });
 }
 
+// Setup boutons print/download
 function setupActions(){
   const printBtn = document.getElementById('printBtn');
   const downloadBtn = document.getElementById('downloadBtn');
@@ -56,95 +58,92 @@ function setupActions(){
   if(downloadBtn) downloadBtn.addEventListener('click', ()=> window.print());
 }
 
-// ✅ هذه هي الدالة الوحيدة التي تضيف المشاريع المخزنة
+// Ajouter un projet au DOM (sans effacer les autres)
+function appendOneProject(p){
+  const container = document.getElementById('project-list');
+  if(!container) return;
+
+  const div = document.createElement('div');
+  div.className = 'project-card';
+
+  let actionElem = null;
+
+  if (p.type === 'blender') {
+    const a = document.createElement('a');
+    a.href = '#';
+    a.className = 'btn ghost';
+    a.textContent = 'Voir le projet';
+    a.addEventListener('click', function(evt){
+      handleBlenderProject(evt, p.fileData, p.fileName);
+    });
+    actionElem = a;
+  } else {
+    const a = document.createElement('a');
+    a.href = p.link || '#';
+    a.target = '_blank';
+    a.className = 'btn ghost';
+    a.textContent = 'Voir le projet';
+    actionElem = a;
+  }
+
+  const titleEl = document.createElement('h3');
+  titleEl.textContent = p.title || '';
+  const descEl = document.createElement('p');
+  descEl.textContent = p.desc || '';
+  div.appendChild(titleEl);
+  div.appendChild(descEl);
+
+  if (p.type === 'blender') {
+    const tag = document.createElement('div');
+    tag.style.fontSize = '0.9rem';
+    tag.style.color = '#7c4dff';
+    tag.textContent = '📁 Modèle 3D';
+    div.appendChild(tag);
+  }
+
+  const wrapper = document.createElement('div');
+  wrapper.style.display = 'flex';
+  wrapper.style.gap = '8px';
+  wrapper.style.marginTop = '8px';
+  wrapper.appendChild(actionElem);
+
+  const removeBtn = document.createElement('button');
+  removeBtn.className = 'btn ghost';
+  removeBtn.textContent = 'Supprimer';
+  removeBtn.addEventListener('click', function(){
+    try {
+      let arr = JSON.parse(localStorage.getItem('projects')) || [];
+      const idx = arr.findIndex(item => {
+        if (item.title === p.title && item.desc === p.desc) {
+          if (item.type === 'blender' && p.type === 'blender') {
+            return item.fileName === p.fileName;
+          }
+          return item.type === p.type && item.link === p.link;
+        }
+        return false;
+      });
+      if (idx !== -1) {
+        if(!confirm('Supprimer ce projet ?')) return;
+        arr.splice(idx,1);
+        localStorage.setItem('projects', JSON.stringify(arr));
+        div.remove();
+      }
+    } catch(err) {
+      console.error('Erreur suppression:', err);
+      alert('Erreur lors de la suppression du projet');
+    }
+  });
+
+  wrapper.appendChild(removeBtn);
+  div.appendChild(wrapper);
+  container.appendChild(div);
+}
+
+// Charger tous les projets stockés dans localStorage
 function appendStoredProjects(){
   try {
     const stored = JSON.parse(localStorage.getItem('projects')) || [];
-    const container = document.getElementById('project-list');
-    if(!container) return;
-
-    // تنظيف الحاوية أولاً
-    container.innerHTML = '';
-
-    // إضافة المشاريع المخزنة أولاً (الأحدث أولاً)
-    stored.forEach(p => {
-      const div = document.createElement('div');
-      div.className = 'project-card';
-      
-      let buttonHTML = '';
-      if (p.type === 'blender') {
-        buttonHTML = `
-          <a href="#" class="btn ghost" onclick="handleBlenderProject(event, '${p.fileData}', '${p.fileName}')">
-            Voir le projet
-          </a>
-        `;
-      } else {
-        buttonHTML = `<a href="${p.link}" target="_blank" class="btn ghost">Voir le projet</a>`;
-      }
-      
-      div.innerHTML = `
-        <h3>${escapeHtml(p.title)}</h3>
-        <p>${escapeHtml(p.desc)}</p>
-        ${p.type === 'blender' ? '<div style="font-size:0.9rem;color:#7c4dff">📁 Modèle 3D</div>' : ''}
-        ${buttonHTML}
-      `;
-      container.appendChild(div);
-    });
-
-    // إضافة المشاريع الافتراضية فقط إذا لم تكن هناك مشاريع مخزنة
-    if (stored.length === 0) {
-      const defaultProjects = [
-        {
-          title: 'Chatbot universitaire',
-          desc: 'Répond aux questions concernant la faculté.',
-          link: '#',
-          type: 'link'
-        },
-        {
-          title: 'API REST avec FastAPI',
-          desc: 'Fusion de plusieurs fichiers PDF.',
-          link: '#',
-          type: 'link'
-        },
-        {
-          title: 'Site web de shopping',
-          desc: 'Produits féminins.',
-          link: '#',
-          type: 'link'
-        },
-        {
-          title: 'Site web de prévisions météorologiques',
-          desc: 'Météo en temps réel.',
-          link: '#',
-          type: 'link'
-        },
-        {
-          title: 'Site scientifique sur l\'espace',
-          desc: 'Vulgarisation des découvertes spatiales.',
-          link: '#',
-          type: 'link'
-        },
-        {
-          title: 'Portfolio personnel',
-          desc: 'Mon site web moderne et responsive présentant mes projets et compétences.',
-          link: 'https://moccasin-issi-75.tiiny.site/',
-          type: 'link'
-        }
-      ];
-
-      defaultProjects.forEach(project => {
-        const div = document.createElement('div');
-        div.className = 'project-card';
-        
-        div.innerHTML = `
-          <h3>${escapeHtml(project.title)}</h3>
-          <p>${escapeHtml(project.desc)}</p>
-          <a href="${project.link}" target="_blank" class="btn ghost">Voir le projet</a>
-        `;
-        container.appendChild(div);
-      });
-    }
-
+    stored.forEach(p => appendOneProject(p));
   } catch(e){
     console.error('Erreur lors du chargement des projets depuis localStorage', e);
   }
