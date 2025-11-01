@@ -27,6 +27,7 @@
         <input id="title" placeholder="Titre du projet" style="width:100%;padding:10px;margin:6px 0;border-radius:8px;background:transparent;border:1px solid rgba(255,255,255,0.04);color:inherit">
         <input id="desc" placeholder="Courte description" style="width:100%;padding:10px;margin:6px 0;border-radius:8px;background:transparent;border:1px solid rgba(255,255,255,0.04);color:inherit">
         
+        <!-- خيارات رفع المشروع -->
         <div style="margin:12px 0">
           <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
             <input type="radio" name="projectType" value="link" checked onchange="toggleProjectType()">
@@ -38,11 +39,13 @@
           </label>
         </div>
         
+        <!-- حقل الرابط -->
         <input id="link" placeholder="Lien du projet (https://...)" style="width:100%;padding:10px;margin:6px 0;border-radius:8px;background:transparent;border:1px solid rgba(255,255,255,0.04);color:inherit">
         
+        <!-- حقل ملف Blender -->
         <div id="fileInputContainer" style="display:none">
           <input type="file" id="blendFile" accept=".blend" style="width:100%;padding:10px;margin:6px 0;border-radius:8px;background:transparent;border:1px solid rgba(255,255,255,0.04);color:inherit">
-          <p style="font-size:0.85rem;color:var(--muted);margin:4px 0">Taille maximale: 900MB</p>
+          <p style="font-size:0.85rem;color:var(--muted);margin:4px 0">Taille maximale: 10MB</p>
         </div>
 
         <div style="display:flex;gap:10px;margin-top:10px">
@@ -83,9 +86,11 @@
       if (projectType === 'link') {
         linkInput.style.display = 'block';
         fileInputContainer.style.display = 'none';
+        linkInput.required = true;
       } else {
         linkInput.style.display = 'none';
         fileInputContainer.style.display = 'block';
+        linkInput.required = false;
       }
     }
 
@@ -109,8 +114,6 @@
         }
         projectData.link = link;
         projectData.type = 'link';
-        
-        saveProject(projectData);
       } else {
         const fileInput = document.getElementById('blendFile');
         if(!fileInput.files.length){ 
@@ -119,8 +122,8 @@
         }
         
         const file = fileInput.files[0];
-        if (file.size > 900 * 1024 * 1024) { // <-- limite 900MB
-          alert('Le fichier est trop volumineux (max 900MB) !');
+        if (file.size > 10 * 1024 * 1024) { // 10MB
+          alert('Le fichier est trop volumineux (max 10MB) !');
           return;
         }
         
@@ -129,20 +132,14 @@
           return;
         }
         
-        const reader = new FileReader();
-        reader.onload = function(e) {
-          projectData.fileData = e.target.result;
-          projectData.fileName = file.name;
-          projectData.type = 'blender';
-          
-          saveProject(projectData);
-        };
-        reader.readAsDataURL(file);
-        return;
+        // تحويل الملف إلى رابط قابل للتحميل
+        const fileURL = URL.createObjectURL(file);
+        projectData.link = fileURL;
+        projectData.type = 'blender';
+        projectData.fileName = file.name;
       }
-    }
 
-    function saveProject(projectData) {
+      // Récupérer les projets existants (sécurisé avec try/catch)
       let arr = [];
       try {
         arr = JSON.parse(localStorage.getItem('projects')) || [];
@@ -150,9 +147,11 @@
         arr = [];
       }
 
+      // Ajouter le nouveau projet en tête (recent en premier)
       arr.unshift(projectData);
       localStorage.setItem('projects', JSON.stringify(arr));
 
+      // Réinitialiser champs
       document.getElementById('title').value = '';
       document.getElementById('desc').value = '';
       document.getElementById('link').value = '';
@@ -181,10 +180,13 @@
           <div style="flex:1">
             <strong>${escapeHtml(p.title)}</strong>
             <div class="muted" style="font-size:0.9rem">${escapeHtml(p.desc)}</div>
-            ${p.type === 'blender' ? '<div style="font-size:0.8rem;color:#7c4dff">📁 Modèle 3D</div>' : ''}
+            ${p.type === 'blender' ? '<div style="font-size:0.8rem;color:#7c4dff">📁 Fichier Blender</div>' : ''}
           </div>
           <div style="display:flex;gap:8px;margin-left:12px">
-            <button class="btn ghost" onclick="removeAt(${idx})">Supprimer</button>
+            <a class="btn ghost" href="${escapeAttr(p.link)}" target="_blank" download="${p.type === 'blender' ? (p.fileName || 'project.blend') : ''}">
+              ${p.type === 'blender' ? 'Télécharger' : 'Ouvrir'}
+            </a>
+            <button class="btn ghost" onclick="removeAt(${idx})">Suppr</button>
           </div>
         </div>
       `).join('');
@@ -196,6 +198,11 @@
       if(!arr[i]) return;
       if(!confirm('Supprimer ce projet ?')) return;
       
+      // تحرير رابط الملف إذا كان ملف Blender
+      if (arr[i].type === 'blender') {
+        URL.revokeObjectURL(arr[i].link);
+      }
+      
       arr.splice(i,1);
       localStorage.setItem('projects', JSON.stringify(arr));
       renderList();
@@ -203,15 +210,27 @@
 
     function clearAll(){
       if(!confirm('Supprimer tous les projets ?')) return;
+      
+      // تحرير جميع روابط ملفات Blender
+      let arr = [];
+      try { arr = JSON.parse(localStorage.getItem('projects')) || []; } catch(e){ arr = []; }
+      arr.forEach(project => {
+        if (project.type === 'blender') {
+          URL.revokeObjectURL(project.link);
+        }
+      });
+      
       localStorage.removeItem('projects');
       renderList();
       alert('Tous les projets supprimés.');
     }
 
+    // utilitaires
     function escapeHtml(s){ 
       if(!s) return ''; 
       return s.replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); 
     }
+    function escapeAttr(s){ return s ? s.replace(/"/g,'&quot;') : '#'; }
 
     function isValidUrl(s){
       try {
@@ -222,8 +241,9 @@
       }
     }
 
+    // Afficher la liste au chargement si déjà connecté (si besoin)
     document.addEventListener('DOMContentLoaded', ()=> {
-      toggleProjectType();
+      toggleProjectType(); // تهيئة الواجهة بشكل صحيح
     });
   </script>
 </body>
