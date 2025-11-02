@@ -27,29 +27,38 @@
         <input id="title" placeholder="Titre du projet" style="width:100%;padding:10px;margin:6px 0;border-radius:8px;background:transparent;border:1px solid rgba(255,255,255,0.04);color:inherit">
         <input id="desc" placeholder="Courte description" style="width:100%;padding:10px;margin:6px 0;border-radius:8px;background:transparent;border:1px solid rgba(255,255,255,0.04);color:inherit">
         
+        <!-- Type de projet -->
         <div style="margin:12px 0">
           <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
             <input type="radio" name="projectType" value="link" checked onchange="toggleProjectType()">
             Lien du projet
           </label>
           <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
-            <input type="radio" name="projectType" value="file" onchange="toggleProjectType()">
-            Fichiers (optionnels)
+            <input type="radio" name="projectType" value="blender" onchange="toggleProjectType()">
+            Fichier Blender (.blend)
+          </label>
+          <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
+            <input type="radio" name="projectType" value="media" onchange="toggleProjectType()">
+            Médias (Images/Video)
           </label>
         </div>
         
-        <!-- link -->
+        <!-- Lien -->
         <input id="link" placeholder="Lien du projet (https://...)" style="width:100%;padding:10px;margin:6px 0;border-radius:8px;background:transparent;border:1px solid rgba(255,255,255,0.04);color:inherit">
+        
+        <!-- Fichier Blender -->
+        <div id="blenderInputContainer" style="display:none">
+          <input type="file" id="blendFile" accept=".blend" style="width:100%;padding:10px;margin:6px 0;border-radius:8px;background:transparent;border:1px solid rgba(255,255,255,0.04);color:inherit">
+          <p style="font-size:0.85rem;color:var(--muted);margin:4px 0">Taille maximale: 100MB</p>
+        </div>
 
-        <!-- fichiers: image, video, model -->
-        <div id="fileInputContainer" style="display:none">
-          <label>Image (png/jpg max 5MB)</label>
-          <input type="file" id="imageFile" accept="image/png,image/jpeg" style="width:100%;padding:8px;margin:6px 0;border-radius:8px;background:transparent;border:1px solid rgba(255,255,255,0.04);color:inherit">
-          <label>Vidéo (mp4 max 20MB)</label>
-          <input type="file" id="videoFile" accept="video/mp4" style="width:100%;padding:8px;margin:6px 0;border-radius:8px;background:transparent;border:1px solid rgba(255,255,255,0.04);color:inherit">
-          <label>3D model (.glb recommandé, max 30MB)</label>
-          <input type="file" id="modelFile" accept=".glb" style="width:100%;padding:8px;margin:6px 0;border-radius:8px;background:transparent;border:1px solid rgba(255,255,255,0.04);color:inherit">
-          <p style="font-size:0.85rem;color:var(--muted);margin:4px 0">Nota: Pour affichage 3D possible dans la page, exportez depuis Blender en <strong>.glb</strong>.</p>
+        <!-- Médias (Images/Video) -->
+        <div id="mediaInputContainer" style="display:none">
+          <input type="file" id="imageFile" accept=".png,.jpg,.jpeg,.webp" style="width:100%;padding:10px;margin:6px 0;border-radius:8px;background:transparent;border:1px solid rgba(255,255,255,0.04);color:inherit">
+          <p style="font-size:0.85rem;color:var(--muted);margin:4px 0">Image (PNG, JPG, WebP)</p>
+          
+          <input type="file" id="videoFile" accept=".mp4,.webm,.mov" style="width:100%;padding:10px;margin:6px 0;border-radius:8px;background:transparent;border:1px solid rgba(255,255,255,0.04);color:inherit">
+          <p style="font-size:0.85rem;color:var(--muted);margin:4px 0">Vidéo (MP4, WebM, MOV) - Optionnel</p>
         </div>
 
         <div style="display:flex;gap:10px;margin-top:10px">
@@ -65,56 +74,8 @@
   </main>
 
   <script>
-    // ====== CONFIG ======
-const BIN_URL = "https://api.jsonbin.io/v3/b/6907b238d0ea881f40cf61d7";
-const API_KEY = "$2a$10$dW1U1AU6.KE748DHNfw/FeP0M2dDg7q2EeJQCC13NDruzPhmnkWOa";
-
-
     const PASSWORD = 'manar2025';
 
-    // ====== utilitaires ======
-    function escapeHtml(s){ if(!s) return ''; return s.replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
-    function isValidUrl(s){ try{ const u=new URL(s); return u.protocol==='http:'||u.protocol==='https:'; }catch(e){return false;} }
-    async function fileToBase64(f){
-      return new Promise((res,rej)=>{
-        const reader = new FileReader();
-        reader.onload = ()=> res(reader.result);
-        reader.onerror = rej;
-        reader.readAsDataURL(f);
-      });
-    }
-
-    // ====== JSONBin helpers (client-side using master key) ======
-    async function getProjects(){
-      try{
-        const res = await fetch(BIN_URL + "/latest", {
-          headers: { "X-Master-Key": API_KEY }
-        });
-        const j = await res.json();
-        return j.record || [];
-      }catch(e){
-        console.error(e);
-        return [];
-      }
-    }
-    async function saveProjects(arr){
-      try{
-        const res = await fetch(BIN_URL, {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-            "X-Master-Key": API_KEY
-          },
-          body: JSON.stringify(arr)
-        });
-        return await res.json();
-      }catch(e){
-        console.error(e);
-        throw e;
-      }
-    }
-
-    // ====== Auth ======
     function login(){
       const v = document.getElementById('pwd').value;
       if(v === PASSWORD){
@@ -123,6 +84,7 @@ const API_KEY = "$2a$10$dW1U1AU6.KE748DHNfw/FeP0M2dDg7q2EeJQCC13NDruzPhmnkWOa";
         renderList();
       } else alert('Mot de passe incorrect !');
     }
+
     function logout(){
       document.getElementById('pwd').value = '';
       document.getElementById('loginBlock').style.display = 'block';
@@ -132,70 +94,109 @@ const API_KEY = "$2a$10$dW1U1AU6.KE748DHNfw/FeP0M2dDg7q2EeJQCC13NDruzPhmnkWOa";
     function toggleProjectType() {
       const projectType = document.querySelector('input[name="projectType"]:checked').value;
       const linkInput = document.getElementById('link');
-      const fileInputContainer = document.getElementById('fileInputContainer');
-      if (projectType === 'link') {
-        linkInput.style.display = 'block';
-        fileInputContainer.style.display = 'none';
-      } else {
-        linkInput.style.display = 'none';
-        fileInputContainer.style.display = 'block';
-      }
+      const blenderInputContainer = document.getElementById('blenderInputContainer');
+      const mediaInputContainer = document.getElementById('mediaInputContainer');
+      
+      linkInput.style.display = projectType === 'link' ? 'block' : 'none';
+      blenderInputContainer.style.display = projectType === 'blender' ? 'block' : 'none';
+      mediaInputContainer.style.display = projectType === 'media' ? 'block' : 'none';
+      
+      linkInput.required = projectType === 'link';
     }
 
-    // ====== Ajout projet ======
-    async function addProject(){
+    function addProject(){
       const title = document.getElementById('title').value.trim();
       const desc = document.getElementById('desc').value.trim();
       const projectType = document.querySelector('input[name="projectType"]:checked').value;
-      if(!title || !desc){ alert('Remplis le titre et la description !'); return; }
+      
+      if(!title || !desc){ 
+        alert('Remplis le titre et la description !'); 
+        return; 
+      }
 
-      let projectData = { title, desc, createdAt: new Date().toISOString() };
+      let projectData = { title, desc, type: projectType };
 
       if (projectType === 'link') {
         const link = document.getElementById('link').value.trim();
-        if(!link || !isValidUrl(link)){ alert('Ajoute un lien valide (https://...) pour ton projet !'); return; }
-        projectData.link = link;
-        projectData.type = 'link';
-      } else {
-        // fichiers optionnels
-        const imageFile = document.getElementById('imageFile').files[0];
-        const videoFile = document.getElementById('videoFile').files[0];
-        const modelFile = document.getElementById('modelFile').files[0];
-
-        if(imageFile){
-          if(imageFile.size > 5*1024*1024){ alert('Image trop grande (max 5MB)'); return; }
-          projectData.image = await fileToBase64(imageFile);
-          projectData.imageName = imageFile.name;
+        if(!link || !isValidUrl(link)){ 
+          alert('Ajoute un lien valide (https://...) pour ton projet !'); 
+          return; 
         }
-        if(videoFile){
-          if(videoFile.size > 20*1024*1024){ alert('Vidéo trop grande (max 20MB)'); return; }
-          projectData.video = await fileToBase64(videoFile);
+        projectData.link = link;
+      } 
+      else if (projectType === 'blender') {
+        const fileInput = document.getElementById('blendFile');
+        if(!fileInput.files.length){ 
+          alert('Veuillez sélectionner un fichier Blender !'); 
+          return; 
+        }
+        
+        const file = fileInput.files[0];
+        if (file.size > 100 * 1024 * 1024) {
+          alert('Le fichier est trop volumineux (max 100MB) !');
+          return;
+        }
+        
+        if (!file.name.toLowerCase().endsWith('.blend')) {
+          alert('Veuillez sélectionner un fichier Blender (.blend) !');
+          return;
+        }
+        
+        const fileURL = URL.createObjectURL(file);
+        projectData.blendFile = fileURL;
+        projectData.fileName = file.name;
+      }
+      else if (projectType === 'media') {
+        const imageInput = document.getElementById('imageFile');
+        const videoInput = document.getElementById('videoFile');
+        
+        if(!imageInput.files.length){ 
+          alert('Veuillez sélectionner au moins une image !'); 
+          return; 
+        }
+        
+        // Traitement de l'image
+        const imageFile = imageInput.files[0];
+        if (imageFile.size > 10 * 1024 * 1024) {
+          alert('L\'image est trop volumineuse (max 10MB) !');
+          return;
+        }
+        
+        const imageURL = URL.createObjectURL(imageFile);
+        projectData.imageFile = imageURL;
+        projectData.imageName = imageFile.name;
+        
+        // Traitement de la vidéo (optionnelle)
+        if(videoInput.files.length) {
+          const videoFile = videoInput.files[0];
+          if (videoFile.size > 50 * 1024 * 1024) {
+            alert('La vidéo est trop volumineuse (max 50MB) !');
+            return;
+          }
+          const videoURL = URL.createObjectURL(videoFile);
+          projectData.videoFile = videoURL;
           projectData.videoName = videoFile.name;
         }
-        if(modelFile){
-          if(!modelFile.name.toLowerCase().endsWith('.glb')){ alert('Télécharge un fichier 3D au format .glb (export depuis Blender).'); return; }
-          if(modelFile.size > 30*1024*1024){ alert('Model trop grand (max 30MB)'); return; }
-          projectData.model = await fileToBase64(modelFile);
-          projectData.modelName = modelFile.name;
-          projectData.type = '3d';
-        }
-
-        // si ما فيش ملفات لكن المستخدم اختار file، نخلي النوع link فارغ
-        if(!projectData.type) projectData.type = 'files';
       }
 
-      // حفظ في JSONBin
-      let arr = await getProjects();
-      arr.unshift(projectData);
-      await saveProjects(arr);
+      // Sauvegarder dans localStorage
+      let arr = [];
+      try {
+        arr = JSON.parse(localStorage.getItem('projects')) || [];
+      } catch(e){
+        arr = [];
+      }
 
-      // reset form
+      arr.unshift(projectData);
+      localStorage.setItem('projects', JSON.stringify(arr));
+
+      // Réinitialiser les champs
       document.getElementById('title').value = '';
       document.getElementById('desc').value = '';
       document.getElementById('link').value = '';
+      document.getElementById('blendFile').value = '';
       document.getElementById('imageFile').value = '';
       document.getElementById('videoFile').value = '';
-      document.getElementById('modelFile').value = '';
       document.querySelector('input[name="projectType"][value="link"]').checked = true;
       toggleProjectType();
 
@@ -203,45 +204,92 @@ const API_KEY = "$2a$10$dW1U1AU6.KE748DHNfw/FeP0M2dDg7q2EeJQCC13NDruzPhmnkWOa";
       alert('Projet ajouté ✅');
     }
 
-    // ====== Render liste admin ======
-    async function renderList(){
+    function renderList(){
       const list = document.getElementById('currentList');
-      let arr = await getProjects();
-      if(!arr || arr.length === 0){ list.innerHTML = '<p class="muted">Aucun projet enregistré.</p>'; return; }
+      let arr = [];
+      try {
+        arr = JSON.parse(localStorage.getItem('projects')) || [];
+      } catch(e){
+        arr = [];
+      }
+      if(arr.length === 0){
+        list.innerHTML = '<p class="muted">Aucun projet enregistré.</p>';
+        return;
+      }
       list.innerHTML = arr.map((p,idx)=>`
         <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 6px;border-radius:8px;background:rgba(255,255,255,0.02);margin-bottom:8px">
           <div style="flex:1">
             <strong>${escapeHtml(p.title)}</strong>
             <div class="muted" style="font-size:0.9rem">${escapeHtml(p.desc)}</div>
-            ${p.type === '3d' ? '<div style="font-size:0.8rem;color:#7c4dff">📁 3D Model</div>' : ''}
+            ${p.type === 'blender' ? '<div style="font-size:0.8rem;color:#7c4dff">📁 Fichier Blender 3D</div>' : ''}
+            ${p.type === 'media' ? '<div style="font-size:0.8rem;color:#00e5ff">🖼️ Médias (Image/Video)</div>' : ''}
           </div>
           <div style="display:flex;gap:8px;margin-left:12px">
-            ${p.model ? `<a class="btn ghost" href="${p.model}" download="${p.modelName||'model.glb'}">Télécharger 3D</a>` : ''}
-            ${p.image ? `<a class="btn ghost" href="${p.image}" download="${p.imageName||'image.png'}">Télécharger Image</a>` : ''}
-            ${p.video ? `<a class="btn ghost" href="${p.video}" download="${p.videoName||'video.mp4'}">Télécharger Vidéo</a>` : ''}
             <button class="btn ghost" onclick="removeAt(${idx})">Suppr</button>
           </div>
         </div>
       `).join('');
     }
 
-    async function removeAt(i){
-      let arr = await getProjects();
+    function removeAt(i){
+      let arr = [];
+      try { arr = JSON.parse(localStorage.getItem('projects')) || []; } catch(e){ arr = []; }
       if(!arr[i]) return;
       if(!confirm('Supprimer ce projet ?')) return;
+      
+      // Libérer les URLs des fichiers
+      const project = arr[i];
+      if (project.type === 'blender' && project.blendFile) {
+        URL.revokeObjectURL(project.blendFile);
+      }
+      if (project.type === 'media') {
+        if (project.imageFile) URL.revokeObjectURL(project.imageFile);
+        if (project.videoFile) URL.revokeObjectURL(project.videoFile);
+      }
+      
       arr.splice(i,1);
-      await saveProjects(arr);
+      localStorage.setItem('projects', JSON.stringify(arr));
       renderList();
     }
 
-    async function clearAll(){
+    function clearAll(){
       if(!confirm('Supprimer tous les projets ?')) return;
-      await saveProjects([]);
+      
+      // Libérer toutes les URLs
+      let arr = [];
+      try { arr = JSON.parse(localStorage.getItem('projects')) || []; } catch(e){ arr = []; }
+      arr.forEach(project => {
+        if (project.type === 'blender' && project.blendFile) {
+          URL.revokeObjectURL(project.blendFile);
+        }
+        if (project.type === 'media') {
+          if (project.imageFile) URL.revokeObjectURL(project.imageFile);
+          if (project.videoFile) URL.revokeObjectURL(project.videoFile);
+        }
+      });
+      
+      localStorage.removeItem('projects');
       renderList();
       alert('Tous les projets supprimés.');
     }
 
-    // init
+    // utilitaires
+    function escapeHtml(s){ 
+      if(!s) return ''; 
+      return s.replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); 
+    }
+    function escapeAttr(s){ return s ? s.replace(/"/g,'&quot;') : '#'; }
+
+    function isValidUrl(s){
+      try {
+        const u = new URL(s);
+        return u.protocol === 'http:' || u.protocol === 'https:';
+      } catch(e){
+        return false;
+      }
+    }
+
+    // Initialisation
     document.addEventListener('DOMContentLoaded', ()=> {
       toggleProjectType();
     });
