@@ -613,4 +613,80 @@ margin: 1.2cm;
   0% { transform: rotate(0deg); }
   100% { transform: rotate(360deg); }
 }
+/* Styles pour les projets 3D */
+.blender-viewer-3d {
+  background: linear-gradient(180deg, rgba(10,10,18,0.9), rgba(20,15,40,0.8));
+  border: 1px solid rgba(124,77,255,0.3);
+  border-radius: 12px;
+  margin: 15px 0;
+  overflow: hidden;
+  position: relative;
+}
+
+.model-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin: 10px 0;
+  padding: 10px;
+  background: rgba(124,77,255,0.05);
+  border-radius: 8px;
+  border: 1px solid rgba(124,77,255,0.1);
+}
+
+.model-type {
+  color: var(--accent1);
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.model-help {
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+
+.project-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 15px;
+}
+
+.project-actions .btn {
+  flex: 1;
+  text-align: center;
+  font-size: 0.85rem;
+  padding: 8px 12px;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .model-info {
+    flex-direction: column;
+    gap: 8px;
+    align-items: flex-start;
+  }
   
+  .project-actions {
+    flex-direction: column;
+  }
+  
+  .blender-viewer-3d {
+    height: 250px !important;
+  }
+}
+
+/* Animation d'apparition */
+.project-card {
+  animation: fadeInUp 0.6s ease-out;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
