@@ -1,6 +1,6 @@
-// js.js - Three.js fonctionnel immédiatement
+// js.js - عرض ملفات GLB ثلاثية الأبعاد
 
-let scenes = [];
+let activeScenes = [];
 
 function escapeHtml(s){
   if(!s) return '';
@@ -27,220 +27,314 @@ function setupActions(){
   if(downloadBtn) downloadBtn.addEventListener('click', ()=> window.print());
 }
 
-// إنشاء نموذج ثلاثي الأبعاد
-function create3DModel(modelType, containerId) {
+// تحميل وعرض نموذج GLB
+function loadGLBModel(fileData, containerId, fileName) {
   const container = document.getElementById(containerId);
   if (!container) return;
   
-  // تنظيف الحاوية
-  container.innerHTML = '';
+  // تنظيف الحاوية وإضافة مؤشر تحميل
+  container.innerHTML = `
+    <div class="model-loading">
+      <div class="loading-spinner"></div>
+      <p>Chargement de ${fileName}...</p>
+    </div>
+  `;
   
-  // إنشاء المشهد
-  const scene = new THREE.Scene();
-  scene.background = new THREE.Color(0x0a0a12);
-  
-  // الكاميرا
-  const camera = new THREE.PerspectiveCamera(75, container.clientWidth / 300, 0.1, 1000);
-  camera.position.z = 5;
-  
-  // العارض
-  const renderer = new THREE.WebGLRenderer({ antialias: true });
-  renderer.setSize(container.clientWidth, 300);
-  container.appendChild(renderer.domElement);
-  
-  // عناصر التحكم
-  const controls = new THREE.OrbitControls(camera, renderer.domElement);
-  controls.enableDamping = true;
-  controls.dampingFactor = 0.05;
-  
-  // الإضاءة
-  const ambientLight = new THREE.AmbientLight(0x404040, 0.6);
-  scene.add(ambientLight);
-  
-  const directionalLight = new THREE.DirectionalLight(0x7c4dff, 0.8);
-  directionalLight.position.set(5, 5, 5);
-  scene.add(directionalLight);
-  
-  const directionalLight2 = new THREE.DirectionalLight(0x00e5ff, 0.4);
-  directionalLight2.position.set(-5, -5, -5);
-  scene.add(directionalLight2);
-  
-  // إنشاء النموذج
-  let geometry, material, mesh;
-  
-  switch(modelType) {
-    case 'cube':
-      geometry = new THREE.BoxGeometry(2, 2, 2);
-      material = new THREE.MeshPhongMaterial({ 
-        color: 0x7c4dff,
-        shininess: 100 
-      });
-      break;
+  setTimeout(() => {
+    try {
+      // تحويل Data URL إلى Blob
+      const blob = dataURLToBlob(fileData);
+      const url = URL.createObjectURL(blob);
       
-    case 'sphere':
-      geometry = new THREE.SphereGeometry(1.5, 32, 32);
-      material = new THREE.MeshPhongMaterial({ 
-        color: 0x00e5ff,
-        shininess: 100
-      });
-      break;
+      const loader = new THREE.GLTFLoader();
       
-    case 'cone':
-      geometry = new THREE.ConeGeometry(1.5, 3, 32);
-      material = new THREE.MeshPhongMaterial({ 
-        color: 0xff6b6b,
-        shininess: 100 
-      });
-      break;
-      
-    case 'torus':
-      geometry = new THREE.TorusGeometry(1.5, 0.5, 16, 100);
-      material = new THREE.MeshPhongMaterial({ 
-        color: 0x4dff7c,
-        shininess: 100 
-      });
-      break;
-      
-    case 'monkey':
-      geometry = new THREE.IcosahedronGeometry(1.5, 1);
-      material = new THREE.MeshPhongMaterial({ 
-        color: 0xffeb3b,
-        flatShading: true 
-      });
-      break;
-  }
-  
-  mesh = new THREE.Mesh(geometry, material);
-  scene.add(mesh);
-  
-  // شبكة مساعدة
-  const gridHelper = new THREE.GridHelper(10, 10, 0x444444, 0x222222);
-  scene.add(gridHelper);
-  
-  // محاور مساعدة
-  const axesHelper = new THREE.AxesHelper(3);
-  scene.add(axesHelper);
-  
-  // دورة الرسوم المتحركة
-  function animate() {
-    requestAnimationFrame(animate);
-    
-    // دوران تلقائي بسيط
-    mesh.rotation.x += 0.005;
-    mesh.rotation.y += 0.01;
-    
-    controls.update();
-    renderer.render(scene, camera);
-  }
-  
-  animate();
-  
-  // التعامل مع تغيير الحجم
-  function handleResize() {
-    const newWidth = container.clientWidth;
-    camera.aspect = newWidth / 300;
-    camera.updateProjectionMatrix();
-    renderer.setSize(newWidth, 300);
-  }
-  
-  window.addEventListener('resize', handleResize);
-  
-  // حفظ المرجع للمستقبل
-  scenes.push({
-    scene: scene,
-    camera: camera,
-    renderer: renderer,
-    controls: controls,
-    animate: animate,
-    handleResize: handleResize
-  });
+      loader.load(
+        url,
+        function(gltf) {
+          // تنظيف الحاوية بعد التحميل
+          container.innerHTML = '';
+          
+          // إنشاء المشهد
+          const scene = new THREE.Scene();
+          scene.background = new THREE.Color(0x0a0a12);
+          
+          const width = container.clientWidth;
+          const height = 400;
+          
+          const camera = new THREE.PerspectiveCamera(75, width / height, 0.1, 1000);
+          camera.position.z = 5;
+          
+          const renderer = new THREE.WebGLRenderer({ 
+            antialias: true,
+            alpha: true 
+          });
+          renderer.setSize(width, height);
+          renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+          container.appendChild(renderer.domElement);
+          
+          // إضافة النموذج إلى المشهد
+          const model = gltf.scene;
+          scene.add(model);
+          
+          // عناصر التحكم
+          const controls = new THREE.OrbitControls(camera, renderer.domElement);
+          controls.enableDamping = true;
+          controls.dampingFactor = 0.05;
+          controls.minDistance = 1;
+          controls.maxDistance = 50;
+          
+          // إضاءة متقدمة
+          const ambientLight = new THREE.AmbientLight(0x404040, 0.6);
+          scene.add(ambientLight);
+          
+          const directionalLight1 = new THREE.DirectionalLight(0x7c4dff, 0.8);
+          directionalLight1.position.set(5, 5, 5);
+          scene.add(directionalLight1);
+          
+          const directionalLight2 = new THREE.DirectionalLight(0x00e5ff, 0.5);
+          directionalLight2.position.set(-5, 5, -5);
+          scene.add(directionalLight2);
+          
+          const directionalLight3 = new THREE.DirectionalLight(0xffffff, 0.3);
+          directionalLight3.position.set(0, -5, 0);
+          scene.add(directionalLight3);
+          
+          // ضبط حجم وموقع النموذج
+          const box = new THREE.Box3().setFromObject(model);
+          const center = box.getCenter(new THREE.Vector3());
+          const size = box.getSize(new THREE.Vector3());
+          
+          const maxDim = Math.max(size.x, size.y, size.z);
+          const scale = 5 / maxDim;
+          model.scale.multiplyScalar(scale);
+          
+          // مركزة النموذج
+          model.position.x = -center.x * scale;
+          model.position.y = -center.y * scale;
+          model.position.z = -center.z * scale;
+          
+          // شبكة مساعدة
+          const gridHelper = new THREE.GridHelper(20, 20, 0x444444, 0x222222);
+          gridHelper.position.y = box.min.y * scale;
+          scene.add(gridHelper);
+          
+          // محاور مساعدة
+          const axesHelper = new THREE.AxesHelper(5);
+          scene.add(axesHelper);
+          
+          // دورة الرسوم المتحركة
+          function animate() {
+            requestAnimationFrame(animate);
+            controls.update();
+            renderer.render(scene, camera);
+          }
+          animate();
+          
+          // التعامل مع تغيير الحجم
+          function handleResize() {
+            const newWidth = container.clientWidth;
+            camera.aspect = newWidth / height;
+            camera.updateProjectionMatrix();
+            renderer.setSize(newWidth, height);
+          }
+          
+          window.addEventListener('resize', handleResize);
+          
+          // حفظ المرجع
+          const sceneId = containerId;
+          activeScenes[sceneId] = {
+            scene: scene,
+            camera: camera,
+            renderer: renderer,
+            controls: controls,
+            animate: animate,
+            handleResize: handleResize
+          };
+          
+          // تنظيف الذاكرة
+          setTimeout(() => URL.revokeObjectURL(url), 1000);
+          
+          console.log('Modèle GLB chargé avec succès:', fileName);
+        },
+        function(xhr) {
+          // تقدم التحميل
+          const percent = Math.round((xhr.loaded / xhr.total) * 100);
+          const loadingElement = container.querySelector('.model-loading p');
+          if (loadingElement && xhr.total > 0) {
+            loadingElement.textContent = `Chargement de ${fileName}: ${percent}%`;
+          }
+        },
+        function(error) {
+          console.error('Erreur de chargement GLB:', error);
+          container.innerHTML = `
+            <div class="model-error">
+              <div style="color: #ff4444; font-size: 2rem;">❌</div>
+              <p style="color: #ff4444; margin: 10px 0;">Erreur de chargement du modèle</p>
+              <p style="color: var(--muted); font-size: 0.9rem;">${fileName}</p>
+              <button class="viewer-btn" onclick="retryLoad('${containerId}')">🔄 Réessayer</button>
+            </div>
+          `;
+        }
+      );
+    } catch(error) {
+      console.error('Erreur:', error);
+      container.innerHTML = `
+        <div class="model-error">
+          <p style="color: #ff4444;">Erreur lors du traitement du fichier</p>
+        </div>
+      `;
+    }
+  }, 100);
 }
 
-// إنشاء بطاقة مشروع ثلاثي الأبعاد
-function create3DProjectCard(project, index) {
-  const cardId = `project-3d-${index}`;
+// تحويل Data URL إلى Blob
+function dataURLToBlob(dataURL) {
+  const parts = dataURL.split(';base64,');
+  const contentType = parts[0].split(':')[1];
+  const raw = window.atob(parts[1]);
+  const rawLength = raw.length;
+  const uInt8Array = new Uint8Array(rawLength);
+  
+  for (let i = 0; i < rawLength; ++i) {
+    uInt8Array[i] = raw.charCodeAt(i);
+  }
+  
+  return new Blob([uInt8Array], { type: contentType });
+}
+
+// إعادة المحاولة
+function retryLoad(containerId) {
+  const project = getProjectByContainerId(containerId);
+  if (project) {
+    loadGLBModel(project.fileData, containerId, project.fileName);
+  }
+}
+
+// البحث عن المشروع بواسطة containerId
+function getProjectByContainerId(containerId) {
+  try {
+    const projects = JSON.parse(localStorage.getItem('projects3d')) || [];
+    const index = containerId.split('-')[2];
+    return projects[index];
+  } catch(e) {
+    return null;
+  }
+}
+
+// إنشاء بطاقة مشروع GLB
+function createGLBProjectCard(project, index) {
+  const containerId = `glb-viewer-${index}`;
   
   return `
-    <div class="project-card" id="${cardId}">
+    <div class="project-card glb-project">
       <h3>${escapeHtml(project.title)}</h3>
       <p>${escapeHtml(project.desc)}</p>
-      <div class="model-info">
-        <span class="model-type">🎮 ${project.modelType}</span>
-        <span class="model-help">💡 Utilise la souris pour tourner et zoomer</span>
+      
+      <div class="model-meta">
+        <span class="file-info">
+          📁 ${project.fileName} • ${(project.fileSize / 1024 / 1024).toFixed(2)} MB
+        </span>
+        <span class="model-help">
+          🎮 Rotation: Souris • Zoom: Molette • Déplacement: Clic droit
+        </span>
       </div>
-      <div id="viewer-${index}" class="blender-viewer-3d" style="height: 300px; width: 100%;"></div>
-      <div class="project-actions">
-        <button class="btn ghost" onclick="resetCamera(${index})">🔄 Reset Vue</button>
-        <button class="btn ghost" onclick="toggleRotation(${index})">⚡ Rotation</button>
+      
+      <div id="${containerId}" class="glb-viewer-container">
+        <!-- سيتم تحميل النموذج هنا -->
+      </div>
+      
+      <div class="model-controls">
+        <button class="btn ghost" onclick="resetModelView('${containerId}')">
+          🔄 Reset Vue
+        </button>
+        <button class="btn ghost" onclick="toggleHelpers('${containerId}')">
+          🔲 Afficher/Masquer aides
+        </button>
+        <a href="${project.fileData}" download="${project.fileName}" class="btn ghost">
+          📥 Télécharger GLB
+        </a>
       </div>
     </div>
   `;
 }
 
-// إعادة ضبط الكاميرا
-function resetCamera(index) {
-  if (scenes[index]) {
-    scenes[index].controls.reset();
+// إعادة تعيين عرض النموذج
+function resetModelView(containerId) {
+  if (activeScenes[containerId]) {
+    activeScenes[containerId].controls.reset();
   }
 }
 
-// تبديل الدوران
-function toggleRotation(index) {
-  // يمكن إضافة منطق لإيقاف/تشغيل الدوران
-  alert('Rotation activée/désactivée');
+// تبديل الأدوات المساعدة
+function toggleHelpers(containerId) {
+  if (activeScenes[containerId]) {
+    const scene = activeScenes[containerId].scene;
+    const grid = scene.getObjectByName('gridHelper');
+    const axes = scene.getObjectByName('axesHelper');
+    
+    if (grid) grid.visible = !grid.visible;
+    if (axes) axes.visible = !axes.visible;
+  }
 }
 
-// تحميل وعرض المشاريع ثلاثية الأبعاد
-function load3DProjects() {
+// تحميل وعرض مشاريع GLB
+function loadGLBProjects() {
   try {
     const projects = JSON.parse(localStorage.getItem('projects3d')) || [];
     const container = document.getElementById('project-list');
     
     if (!container || projects.length === 0) return;
     
-    // إضافة عنوان قسم المشاريع ثلاثية الأبعاد
+    // إضافة عنوان قسم النماذج ثلاثية الأبعاد
     let html = `
-      <div style="margin: 30px 0 20px 0;">
-        <h2 class="section-title">🎮 Projets 3D Interactifs</h2>
-        <p style="color: var(--muted); font-size: 0.9rem;">Modèles 3D manipulables en temps réel</p>
+      <div style="margin: 40px 0 25px 0;">
+        <h2 class="section-title">🎮 Modèles 3D Interactifs</h2>
+        <p style="color: var(--muted); font-size: 0.9rem;">
+          Modèles 3D exportés depuis Blender - Manipulables en temps réel
+        </p>
       </div>
     `;
     
-    // إضافة كل مشروع
+    // إضافة كل مشروع GLB
     projects.forEach((project, index) => {
-      html += create3DProjectCard(project, index);
+      if (project.type === 'glb') {
+        html += createGLBProjectCard(project, index);
+      }
     });
     
     // إدراج قبل المشاريع الثابتة الأصلية
     const staticProjects = container.innerHTML;
     container.innerHTML = html + staticProjects;
     
-    // تهيئة المشاهد ثلاثية الأبعاد بعد إضافةها إلى DOM
+    // تحميل النماذج بعد إضافتها إلى DOM
     setTimeout(() => {
       projects.forEach((project, index) => {
-        create3DModel(project.modelType, `viewer-${index}`);
+        if (project.type === 'glb') {
+          loadGLBModel(project.fileData, `glb-viewer-${index}`, project.fileName);
+        }
       });
-    }, 100);
+    }, 500);
     
   } catch(e) {
-    console.error('Erreur chargement projets 3D:', e);
+    console.error('Erreur chargement projets GLB:', e);
   }
 }
 
 // التهيئة عند تحميل الصفحة
 document.addEventListener('DOMContentLoaded', function() {
-  load3DProjects();
+  loadGLBProjects();
   setupActions();
   revealOnScroll();
   window.addEventListener('scroll', revealOnScroll);
 });
 
-// تنظيف الذاكرة عند مغادرة الصفحة
+// تنظيف الذاكرة
 window.addEventListener('beforeunload', function() {
-  scenes.forEach(scene => {
-    if (scene.renderer) {
+  Object.keys(activeScenes).forEach(key => {
+    const scene = activeScenes[key];
+    if (scene && scene.renderer) {
       scene.renderer.dispose();
     }
   });
-  scenes = [];
+  activeScenes = {};
 });
