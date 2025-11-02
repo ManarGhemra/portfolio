@@ -1,14 +1,15 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-  <!-- في head من index.html -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Admin — Portfolio</title>
   <link rel="stylesheet" href="css.css" />
+  <!-- إضافة مكتبات Three.js -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/DRACOLoader.js"></script>
 </head>
 <body>
   <div class="bg"><div class="blob b1"></div><div class="blob b2"></div></div>
@@ -39,7 +40,7 @@
           </label>
           <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
             <input type="radio" name="projectType" value="blender" onchange="toggleProjectType()">
-            Fichier Blender 3D (.blend + .gltf)
+            Projet 3D Blender
           </label>
           <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
             <input type="radio" name="projectType" value="media" onchange="toggleProjectType()">
@@ -53,18 +54,30 @@
         <!-- Fichier Blender -->
         <div id="blenderInputContainer" style="display:none">
           <div style="margin:10px 0">
-            <strong>Fichier Blender original:</strong>
+            <strong>Fichier Blender (.blend) - pour téléchargement:</strong>
             <input type="file" id="blendFile" accept=".blend" style="width:100%;padding:10px;margin:6px 0;border-radius:8px;background:transparent;border:1px solid rgba(255,255,255,0.04);color:inherit">
-            <p style="font-size:0.85rem;color:var(--muted);margin:4px 0">Fichier .blend original (pour téléchargement)</p>
+            <p style="font-size:0.85rem;color:var(--muted);margin:4px 0">Fichier .blend original</p>
           </div>
           
           <div style="margin:10px 0">
-            <strong>Fichier GLTF/GLB pour visualisation 3D:</strong>
-            <input type="file" id="gltfFile" accept=".gltf,.glb" style="width:100%;padding:10px;margin:6px 0;border-radius:8px;background:transparent;border:1px solid rgba(255,255,255,0.04);color:inherit">
+            <strong>Fichier pour visualisation 3D (OBJ/GLTF/GLB):</strong>
+            <input type="file" id="modelFile" accept=".gltf,.glb,.obj,.mtl,.fbx" style="width:100%;padding:10px;margin:6px 0;border-radius:8px;background:transparent;border:1px solid rgba(255,255,255,0.04);color:inherit">
             <p style="font-size:0.85rem;color:var(--muted);margin:4px 0">
-              Exportez depuis Blender: File → Export → glTF 2.0 (.glb/.gltf)<br>
-              Taille maximale: 50MB
+              Formats supportés: .gltf, .glb, .obj (+.mtl), .fbx<br>
+              <strong>Conseil:</strong> Exportez depuis Blender en GLB pour meilleure compatibilité
             </p>
+          </div>
+
+          <div style="margin:10px 0; padding:10px; background:rgba(124,77,255,0.1); border-radius:8px;">
+            <strong>📝 Comment exporter depuis Blender:</strong>
+            <ol style="font-size:0.85rem; margin:8px 0; padding-left:20px;">
+              <li>Ouvrez votre fichier .blend dans Blender</li>
+              <li>File → Export → glTF 2.0 (.glb/.gltf)</li>
+              <li>Cochez "Selected Objects" si nécessaire</li>
+              <li>Format: .glb (recommandé)</li>
+              <li>Include: Scene, Materials, Textures</li>
+              <li>Cliquez "Export glTF 2.0"</li>
+            </ol>
           </div>
         </div>
 
@@ -142,15 +155,15 @@
       } 
       else if (projectType === 'blender') {
         const blendInput = document.getElementById('blendFile');
-        const gltfInput = document.getElementById('gltfFile');
+        const modelInput = document.getElementById('modelFile');
         
         if(!blendInput.files.length){ 
           alert('Veuillez sélectionner un fichier Blender original !'); 
           return; 
         }
         
-        if(!gltfInput.files.length){ 
-          alert('Veuillez sélectionner un fichier GLTF/GLB pour la visualisation 3D !'); 
+        if(!modelInput.files.length){ 
+          alert('Veuillez sélectionner un fichier pour la visualisation 3D !'); 
           return; 
         }
         
@@ -164,16 +177,17 @@
         projectData.blendFile = blendURL;
         projectData.blendFileName = blendFile.name;
         
-        // Traitement fichier GLTF
-        const gltfFile = gltfInput.files[0];
-        if (gltfFile.size > 50 * 1024 * 1024) {
-          alert('Le fichier GLTF est trop volumineux (max 50MB) !');
+        // Traitement fichier modèle 3D
+        const modelFile = modelInput.files[0];
+        if (modelFile.size > 50 * 1024 * 1024) {
+          alert('Le fichier modèle est trop volumineux (max 50MB) !');
           return;
         }
-        const gltfURL = URL.createObjectURL(gltfFile);
-        projectData.gltfFile = gltfURL;
-        projectData.gltfFileName = gltfFile.name;
-        projectData.isGLB = gltfFile.name.toLowerCase().endsWith('.glb');
+        
+        const modelURL = URL.createObjectURL(modelFile);
+        projectData.modelFile = modelURL;
+        projectData.modelFileName = modelFile.name;
+        projectData.modelFileType = modelFile.name.split('.').pop().toLowerCase();
       }
       else if (projectType === 'media') {
         const imageInput = document.getElementById('imageFile');
@@ -222,7 +236,7 @@
       document.getElementById('desc').value = '';
       document.getElementById('link').value = '';
       document.getElementById('blendFile').value = '';
-      document.getElementById('gltfFile').value = '';
+      document.getElementById('modelFile').value = '';
       document.getElementById('imageFile').value = '';
       document.getElementById('videoFile').value = '';
       document.querySelector('input[name="projectType"][value="link"]').checked = true;
@@ -268,7 +282,7 @@
       const project = arr[i];
       if (project.type === 'blender') {
         if (project.blendFile) URL.revokeObjectURL(project.blendFile);
-        if (project.gltfFile) URL.revokeObjectURL(project.gltfFile);
+        if (project.modelFile) URL.revokeObjectURL(project.modelFile);
       }
       if (project.type === 'media') {
         if (project.imageFile) URL.revokeObjectURL(project.imageFile);
@@ -288,7 +302,7 @@
       arr.forEach(project => {
         if (project.type === 'blender') {
           if (project.blendFile) URL.revokeObjectURL(project.blendFile);
-          if (project.gltfFile) URL.revokeObjectURL(project.gltfFile);
+          if (project.modelFile) URL.revokeObjectURL(project.modelFile);
         }
         if (project.type === 'media') {
           if (project.imageFile) URL.revokeObjectURL(project.imageFile);
