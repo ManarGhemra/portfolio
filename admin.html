@@ -27,7 +27,6 @@
         <input id="title" placeholder="Titre du projet" style="width:100%;padding:10px;margin:6px 0;border-radius:8px;background:transparent;border:1px solid rgba(255,255,255,0.04);color:inherit">
         <input id="desc" placeholder="Courte description" style="width:100%;padding:10px;margin:6px 0;border-radius:8px;background:transparent;border:1px solid rgba(255,255,255,0.04);color:inherit">
         
-        <!-- خيارات رفع المشروع -->
         <div style="margin:12px 0">
           <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
             <input type="radio" name="projectType" value="link" checked onchange="toggleProjectType()">
@@ -35,17 +34,22 @@
           </label>
           <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
             <input type="radio" name="projectType" value="file" onchange="toggleProjectType()">
-            Fichier Blender (.blend)
+            Fichiers (optionnels)
           </label>
         </div>
         
-        <!-- حقل الرابط -->
+        <!-- link -->
         <input id="link" placeholder="Lien du projet (https://...)" style="width:100%;padding:10px;margin:6px 0;border-radius:8px;background:transparent;border:1px solid rgba(255,255,255,0.04);color:inherit">
-        
-        <!-- حقل ملف Blender -->
+
+        <!-- fichiers: image, video, model -->
         <div id="fileInputContainer" style="display:none">
-          <input type="file" id="blendFile" accept=".blend" style="width:100%;padding:10px;margin:6px 0;border-radius:8px;background:transparent;border:1px solid rgba(255,255,255,0.04);color:inherit">
-          <p style="font-size:0.85rem;color:var(--muted);margin:4px 0">Taille maximale: 10MB</p>
+          <label>Image (png/jpg max 5MB)</label>
+          <input type="file" id="imageFile" accept="image/png,image/jpeg" style="width:100%;padding:8px;margin:6px 0;border-radius:8px;background:transparent;border:1px solid rgba(255,255,255,0.04);color:inherit">
+          <label>Vidéo (mp4 max 20MB)</label>
+          <input type="file" id="videoFile" accept="video/mp4" style="width:100%;padding:8px;margin:6px 0;border-radius:8px;background:transparent;border:1px solid rgba(255,255,255,0.04);color:inherit">
+          <label>3D model (.glb recommandé, max 30MB)</label>
+          <input type="file" id="modelFile" accept=".glb" style="width:100%;padding:8px;margin:6px 0;border-radius:8px;background:transparent;border:1px solid rgba(255,255,255,0.04);color:inherit">
+          <p style="font-size:0.85rem;color:var(--muted);margin:4px 0">Nota: Pour affichage 3D possible dans la page, exportez depuis Blender en <strong>.glb</strong>.</p>
         </div>
 
         <div style="display:flex;gap:10px;margin-top:10px">
@@ -61,8 +65,56 @@
   </main>
 
   <script>
+    // ====== CONFIG ======
+const BIN_URL = "https://api.jsonbin.io/v3/b/6907b238d0ea881f40cf61d7";
+const API_KEY = "$2a$10$dW1U1AU6.KE748DHNfw/FeP0M2dDg7q2EeJQCC13NDruzPhmnkWOa";
+
+
     const PASSWORD = 'manar2025';
 
+    // ====== utilitaires ======
+    function escapeHtml(s){ if(!s) return ''; return s.replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
+    function isValidUrl(s){ try{ const u=new URL(s); return u.protocol==='http:'||u.protocol==='https:'; }catch(e){return false;} }
+    async function fileToBase64(f){
+      return new Promise((res,rej)=>{
+        const reader = new FileReader();
+        reader.onload = ()=> res(reader.result);
+        reader.onerror = rej;
+        reader.readAsDataURL(f);
+      });
+    }
+
+    // ====== JSONBin helpers (client-side using master key) ======
+    async function getProjects(){
+      try{
+        const res = await fetch(BIN_URL + "/latest", {
+          headers: { "X-Master-Key": API_KEY }
+        });
+        const j = await res.json();
+        return j.record || [];
+      }catch(e){
+        console.error(e);
+        return [];
+      }
+    }
+    async function saveProjects(arr){
+      try{
+        const res = await fetch(BIN_URL, {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            "X-Master-Key": API_KEY
+          },
+          body: JSON.stringify(arr)
+        });
+        return await res.json();
+      }catch(e){
+        console.error(e);
+        throw e;
+      }
+    }
+
+    // ====== Auth ======
     function login(){
       const v = document.getElementById('pwd').value;
       if(v === PASSWORD){
@@ -71,7 +123,6 @@
         renderList();
       } else alert('Mot de passe incorrect !');
     }
-
     function logout(){
       document.getElementById('pwd').value = '';
       document.getElementById('loginBlock').style.display = 'block';
@@ -82,80 +133,69 @@
       const projectType = document.querySelector('input[name="projectType"]:checked').value;
       const linkInput = document.getElementById('link');
       const fileInputContainer = document.getElementById('fileInputContainer');
-      
       if (projectType === 'link') {
         linkInput.style.display = 'block';
         fileInputContainer.style.display = 'none';
-        linkInput.required = true;
       } else {
         linkInput.style.display = 'none';
         fileInputContainer.style.display = 'block';
-        linkInput.required = false;
       }
     }
 
-    function addProject(){
+    // ====== Ajout projet ======
+    async function addProject(){
       const title = document.getElementById('title').value.trim();
       const desc = document.getElementById('desc').value.trim();
       const projectType = document.querySelector('input[name="projectType"]:checked').value;
-      
-      if(!title || !desc){ 
-        alert('Remplis le titre et la description !'); 
-        return; 
-      }
+      if(!title || !desc){ alert('Remplis le titre et la description !'); return; }
 
-      let projectData = { title, desc };
+      let projectData = { title, desc, createdAt: new Date().toISOString() };
 
       if (projectType === 'link') {
         const link = document.getElementById('link').value.trim();
-        if(!link || !isValidUrl(link)){ 
-          alert('Ajoute un lien valide (https://...) pour ton projet !'); 
-          return; 
-        }
+        if(!link || !isValidUrl(link)){ alert('Ajoute un lien valide (https://...) pour ton projet !'); return; }
         projectData.link = link;
         projectData.type = 'link';
       } else {
-        const fileInput = document.getElementById('blendFile');
-        if(!fileInput.files.length){ 
-          alert('Veuillez sélectionner un fichier Blender !'); 
-          return; 
+        // fichiers optionnels
+        const imageFile = document.getElementById('imageFile').files[0];
+        const videoFile = document.getElementById('videoFile').files[0];
+        const modelFile = document.getElementById('modelFile').files[0];
+
+        if(imageFile){
+          if(imageFile.size > 5*1024*1024){ alert('Image trop grande (max 5MB)'); return; }
+          projectData.image = await fileToBase64(imageFile);
+          projectData.imageName = imageFile.name;
         }
-        
-        const file = fileInput.files[0];
-        if (file.size > 90000 * 1024 * 1024) { // 10MB
-          alert('Le fichier est trop volumineux (max 90000MB) !');
-          return;
+        if(videoFile){
+          if(videoFile.size > 20*1024*1024){ alert('Vidéo trop grande (max 20MB)'); return; }
+          projectData.video = await fileToBase64(videoFile);
+          projectData.videoName = videoFile.name;
         }
-        
-        if (!file.name.toLowerCase().endsWith('.blend')) {
-          alert('Veuillez sélectionner un fichier Blender (.blend) !');
-          return;
+        if(modelFile){
+          if(!modelFile.name.toLowerCase().endsWith('.glb')){ alert('Télécharge un fichier 3D au format .glb (export depuis Blender).'); return; }
+          if(modelFile.size > 30*1024*1024){ alert('Model trop grand (max 30MB)'); return; }
+          projectData.model = await fileToBase64(modelFile);
+          projectData.modelName = modelFile.name;
+          projectData.type = '3d';
         }
-        
-        // تحويل الملف إلى رابط قابل للتحميل
-        const fileURL = URL.createObjectURL(file);
-        projectData.link = fileURL;
-        projectData.type = 'blender';
-        projectData.fileName = file.name;
+
+        // si ما فيش ملفات لكن المستخدم اختار file، نخلي النوع link فارغ
+        if(!projectData.type) projectData.type = 'files';
       }
 
-      // Récupérer les projets existants (sécurisé avec try/catch)
-      let arr = [];
-      try {
-        arr = JSON.parse(localStorage.getItem('projects')) || [];
-      } catch(e){
-        arr = [];
-      }
-
-      // Ajouter le nouveau projet en tête (recent en premier)
+      // حفظ في JSONBin
+      let arr = await getProjects();
       arr.unshift(projectData);
-      localStorage.setItem('projects', JSON.stringify(arr));
+      await saveProjects(arr);
 
-      // Réinitialiser champs
+      // reset form
       document.getElementById('title').value = '';
       document.getElementById('desc').value = '';
       document.getElementById('link').value = '';
-      document.getElementById('blendFile').value = '';
+      document.getElementById('imageFile').value = '';
+      document.getElementById('videoFile').value = '';
+      document.getElementById('modelFile').value = '';
       document.querySelector('input[name="projectType"][value="link"]').checked = true;
       toggleProjectType();
 
@@ -163,87 +203,47 @@
       alert('Projet ajouté ✅');
     }
 
-    function renderList(){
+    // ====== Render liste admin ======
+    async function renderList(){
       const list = document.getElementById('currentList');
-      let arr = [];
-      try {
-        arr = JSON.parse(localStorage.getItem('projects')) || [];
-      } catch(e){
-        arr = [];
-      }
-      if(arr.length === 0){
-        list.innerHTML = '<p class="muted">Aucun projet enregistré.</p>';
-        return;
-      }
+      let arr = await getProjects();
+      if(!arr || arr.length === 0){ list.innerHTML = '<p class="muted">Aucun projet enregistré.</p>'; return; }
       list.innerHTML = arr.map((p,idx)=>`
         <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 6px;border-radius:8px;background:rgba(255,255,255,0.02);margin-bottom:8px">
           <div style="flex:1">
             <strong>${escapeHtml(p.title)}</strong>
             <div class="muted" style="font-size:0.9rem">${escapeHtml(p.desc)}</div>
-            ${p.type === 'blender' ? '<div style="font-size:0.8rem;color:#7c4dff">📁 Fichier Blender</div>' : ''}
+            ${p.type === '3d' ? '<div style="font-size:0.8rem;color:#7c4dff">📁 3D Model</div>' : ''}
           </div>
           <div style="display:flex;gap:8px;margin-left:12px">
-            <a class="btn ghost" href="${escapeAttr(p.link)}" target="_blank" download="${p.type === 'blender' ? (p.fileName || 'project.blend') : ''}">
-              ${p.type === 'blender' ? 'Télécharger' : 'Ouvrir'}
-            </a>
+            ${p.model ? `<a class="btn ghost" href="${p.model}" download="${p.modelName||'model.glb'}">Télécharger 3D</a>` : ''}
+            ${p.image ? `<a class="btn ghost" href="${p.image}" download="${p.imageName||'image.png'}">Télécharger Image</a>` : ''}
+            ${p.video ? `<a class="btn ghost" href="${p.video}" download="${p.videoName||'video.mp4'}">Télécharger Vidéo</a>` : ''}
             <button class="btn ghost" onclick="removeAt(${idx})">Suppr</button>
           </div>
         </div>
       `).join('');
     }
 
-    function removeAt(i){
-      let arr = [];
-      try { arr = JSON.parse(localStorage.getItem('projects')) || []; } catch(e){ arr = []; }
+    async function removeAt(i){
+      let arr = await getProjects();
       if(!arr[i]) return;
       if(!confirm('Supprimer ce projet ?')) return;
-      
-      // تحرير رابط الملف إذا كان ملف Blender
-      if (arr[i].type === 'blender') {
-        URL.revokeObjectURL(arr[i].link);
-      }
-      
       arr.splice(i,1);
-      localStorage.setItem('projects', JSON.stringify(arr));
+      await saveProjects(arr);
       renderList();
     }
 
-    function clearAll(){
+    async function clearAll(){
       if(!confirm('Supprimer tous les projets ?')) return;
-      
-      // تحرير جميع روابط ملفات Blender
-      let arr = [];
-      try { arr = JSON.parse(localStorage.getItem('projects')) || []; } catch(e){ arr = []; }
-      arr.forEach(project => {
-        if (project.type === 'blender') {
-          URL.revokeObjectURL(project.link);
-        }
-      });
-      
-      localStorage.removeItem('projects');
+      await saveProjects([]);
       renderList();
       alert('Tous les projets supprimés.');
     }
 
-    // utilitaires
-    function escapeHtml(s){ 
-      if(!s) return ''; 
-      return s.replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); 
-    }
-    function escapeAttr(s){ return s ? s.replace(/"/g,'&quot;') : '#'; }
-
-    function isValidUrl(s){
-      try {
-        const u = new URL(s);
-        return u.protocol === 'http:' || u.protocol === 'https:';
-      } catch(e){
-        return false;
-      }
-    }
-
-    // Afficher la liste au chargement si déjà connecté (si besoin)
+    // init
     document.addEventListener('DOMContentLoaded', ()=> {
-      toggleProjectType(); // تهيئة الواجهة بشكل صحيح
+      toggleProjectType();
     });
   </script>
 </body>
