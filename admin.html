@@ -1,6 +1,10 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
+  <!-- في head من index.html -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Admin — Portfolio</title>
@@ -35,7 +39,7 @@
           </label>
           <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
             <input type="radio" name="projectType" value="blender" onchange="toggleProjectType()">
-            Fichier Blender (.blend)
+            Fichier Blender 3D (.blend + .gltf)
           </label>
           <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
             <input type="radio" name="projectType" value="media" onchange="toggleProjectType()">
@@ -48,8 +52,20 @@
         
         <!-- Fichier Blender -->
         <div id="blenderInputContainer" style="display:none">
-          <input type="file" id="blendFile" accept=".blend" style="width:100%;padding:10px;margin:6px 0;border-radius:8px;background:transparent;border:1px solid rgba(255,255,255,0.04);color:inherit">
-          <p style="font-size:0.85rem;color:var(--muted);margin:4px 0">Taille maximale: 100MB</p>
+          <div style="margin:10px 0">
+            <strong>Fichier Blender original:</strong>
+            <input type="file" id="blendFile" accept=".blend" style="width:100%;padding:10px;margin:6px 0;border-radius:8px;background:transparent;border:1px solid rgba(255,255,255,0.04);color:inherit">
+            <p style="font-size:0.85rem;color:var(--muted);margin:4px 0">Fichier .blend original (pour téléchargement)</p>
+          </div>
+          
+          <div style="margin:10px 0">
+            <strong>Fichier GLTF/GLB pour visualisation 3D:</strong>
+            <input type="file" id="gltfFile" accept=".gltf,.glb" style="width:100%;padding:10px;margin:6px 0;border-radius:8px;background:transparent;border:1px solid rgba(255,255,255,0.04);color:inherit">
+            <p style="font-size:0.85rem;color:var(--muted);margin:4px 0">
+              Exportez depuis Blender: File → Export → glTF 2.0 (.glb/.gltf)<br>
+              Taille maximale: 50MB
+            </p>
+          </div>
         </div>
 
         <!-- Médias (Images/Video) -->
@@ -125,26 +141,39 @@
         projectData.link = link;
       } 
       else if (projectType === 'blender') {
-        const fileInput = document.getElementById('blendFile');
-        if(!fileInput.files.length){ 
-          alert('Veuillez sélectionner un fichier Blender !'); 
+        const blendInput = document.getElementById('blendFile');
+        const gltfInput = document.getElementById('gltfFile');
+        
+        if(!blendInput.files.length){ 
+          alert('Veuillez sélectionner un fichier Blender original !'); 
           return; 
         }
         
-        const file = fileInput.files[0];
-        if (file.size > 100 * 1024 * 1024) {
-          alert('Le fichier est trop volumineux (max 100MB) !');
-          return;
+        if(!gltfInput.files.length){ 
+          alert('Veuillez sélectionner un fichier GLTF/GLB pour la visualisation 3D !'); 
+          return; 
         }
         
-        if (!file.name.toLowerCase().endsWith('.blend')) {
-          alert('Veuillez sélectionner un fichier Blender (.blend) !');
+        // Traitement fichier Blender
+        const blendFile = blendInput.files[0];
+        if (blendFile.size > 100 * 1024 * 1024) {
+          alert('Le fichier Blender est trop volumineux (max 100MB) !');
           return;
         }
+        const blendURL = URL.createObjectURL(blendFile);
+        projectData.blendFile = blendURL;
+        projectData.blendFileName = blendFile.name;
         
-        const fileURL = URL.createObjectURL(file);
-        projectData.blendFile = fileURL;
-        projectData.fileName = file.name;
+        // Traitement fichier GLTF
+        const gltfFile = gltfInput.files[0];
+        if (gltfFile.size > 50 * 1024 * 1024) {
+          alert('Le fichier GLTF est trop volumineux (max 50MB) !');
+          return;
+        }
+        const gltfURL = URL.createObjectURL(gltfFile);
+        projectData.gltfFile = gltfURL;
+        projectData.gltfFileName = gltfFile.name;
+        projectData.isGLB = gltfFile.name.toLowerCase().endsWith('.glb');
       }
       else if (projectType === 'media') {
         const imageInput = document.getElementById('imageFile');
@@ -155,7 +184,6 @@
           return; 
         }
         
-        // Traitement de l'image
         const imageFile = imageInput.files[0];
         if (imageFile.size > 10 * 1024 * 1024) {
           alert('L\'image est trop volumineuse (max 10MB) !');
@@ -166,7 +194,6 @@
         projectData.imageFile = imageURL;
         projectData.imageName = imageFile.name;
         
-        // Traitement de la vidéo (optionnelle)
         if(videoInput.files.length) {
           const videoFile = videoInput.files[0];
           if (videoFile.size > 50 * 1024 * 1024) {
@@ -179,7 +206,7 @@
         }
       }
 
-      // Sauvegarder dans localStorage
+      // Sauvegarder
       let arr = [];
       try {
         arr = JSON.parse(localStorage.getItem('projects')) || [];
@@ -190,11 +217,12 @@
       arr.unshift(projectData);
       localStorage.setItem('projects', JSON.stringify(arr));
 
-      // Réinitialiser les champs
+      // Réinitialiser
       document.getElementById('title').value = '';
       document.getElementById('desc').value = '';
       document.getElementById('link').value = '';
       document.getElementById('blendFile').value = '';
+      document.getElementById('gltfFile').value = '';
       document.getElementById('imageFile').value = '';
       document.getElementById('videoFile').value = '';
       document.querySelector('input[name="projectType"][value="link"]').checked = true;
@@ -221,7 +249,7 @@
           <div style="flex:1">
             <strong>${escapeHtml(p.title)}</strong>
             <div class="muted" style="font-size:0.9rem">${escapeHtml(p.desc)}</div>
-            ${p.type === 'blender' ? '<div style="font-size:0.8rem;color:#7c4dff">📁 Fichier Blender 3D</div>' : ''}
+            ${p.type === 'blender' ? '<div style="font-size:0.8rem;color:#7c4dff">🎮 Modèle 3D Interactif</div>' : ''}
             ${p.type === 'media' ? '<div style="font-size:0.8rem;color:#00e5ff">🖼️ Médias (Image/Video)</div>' : ''}
           </div>
           <div style="display:flex;gap:8px;margin-left:12px">
@@ -237,10 +265,10 @@
       if(!arr[i]) return;
       if(!confirm('Supprimer ce projet ?')) return;
       
-      // Libérer les URLs des fichiers
       const project = arr[i];
-      if (project.type === 'blender' && project.blendFile) {
-        URL.revokeObjectURL(project.blendFile);
+      if (project.type === 'blender') {
+        if (project.blendFile) URL.revokeObjectURL(project.blendFile);
+        if (project.gltfFile) URL.revokeObjectURL(project.gltfFile);
       }
       if (project.type === 'media') {
         if (project.imageFile) URL.revokeObjectURL(project.imageFile);
@@ -255,12 +283,12 @@
     function clearAll(){
       if(!confirm('Supprimer tous les projets ?')) return;
       
-      // Libérer toutes les URLs
       let arr = [];
       try { arr = JSON.parse(localStorage.getItem('projects')) || []; } catch(e){ arr = []; }
       arr.forEach(project => {
-        if (project.type === 'blender' && project.blendFile) {
-          URL.revokeObjectURL(project.blendFile);
+        if (project.type === 'blender') {
+          if (project.blendFile) URL.revokeObjectURL(project.blendFile);
+          if (project.gltfFile) URL.revokeObjectURL(project.gltfFile);
         }
         if (project.type === 'media') {
           if (project.imageFile) URL.revokeObjectURL(project.imageFile);
@@ -273,12 +301,10 @@
       alert('Tous les projets supprimés.');
     }
 
-    // utilitaires
     function escapeHtml(s){ 
       if(!s) return ''; 
       return s.replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); 
     }
-    function escapeAttr(s){ return s ? s.replace(/"/g,'&quot;') : '#'; }
 
     function isValidUrl(s){
       try {
@@ -289,7 +315,6 @@
       }
     }
 
-    // Initialisation
     document.addEventListener('DOMContentLoaded', ()=> {
       toggleProjectType();
     });
