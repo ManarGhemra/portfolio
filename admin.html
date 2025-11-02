@@ -29,25 +29,32 @@
         
         <!-- Section pour les fichiers -->
         <div style="margin:12px 0">
-          <h4 style="margin-bottom:8px">Fichiers du projet (au moins un requis)</h4>
+          <h4 style="margin-bottom:8px">Fichiers du projet (liens externes)</h4>
           
           <div style="margin-bottom:10px">
-            <label style="display:block;margin-bottom:6px">Fichier Blender (.blend)</label>
-            <input type="file" id="blendFile" accept=".blend" style="width:100%;padding:8px;border-radius:8px;background:transparent;border:1px solid rgba(255,255,255,0.04);color:inherit">
-            <p style="font-size:0.85rem;color:var(--muted);margin:4px 0">Taille maximale: 10000MB</p>
+            <label style="display:block;margin-bottom:6px">Lien du fichier Blender</label>
+            <input type="url" id="blendLink" placeholder="https://drive.google.com/... ou https://dropbox.com/..." style="width:100%;padding:8px;border-radius:8px;background:transparent;border:1px solid rgba(255,255,255,0.04);color:inherit">
+            <p style="font-size:0.85rem;color:var(--muted);margin:4px 0">Utilisez Google Drive, Dropbox, ou autre service de stockage</p>
           </div>
           
           <div style="margin-bottom:10px">
-            <label style="display:block;margin-bottom:6px">Image du projet (.png, .jpg)</label>
-            <input type="file" id="imageFile" accept=".png,.jpg,.jpeg" style="width:100%;padding:8px;border-radius:8px;background:transparent;border:1px solid rgba(255,255,255,0.04);color:inherit">
-            <p style="font-size:0.85rem;color:var(--muted);margin:4px 0">Taille maximale: 50MB</p>
+            <label style="display:block;margin-bottom:6px">Lien de l'image</label>
+            <input type="url" id="imageLink" placeholder="https://..." style="width:100%;padding:8px;border-radius:8px;background:transparent;border:1px solid rgba(255,255,255,0.04);color:inherit">
           </div>
           
           <div style="margin-bottom:10px">
-            <label style="display:block;margin-bottom:6px">Vidéo du projet (.mp4, .mov)</label>
-            <input type="file" id="videoFile" accept=".mp4,.mov" style="width:100%;padding:8px;border-radius:8px;background:transparent;border:1px solid rgba(255,255,255,0.04);color:inherit">
-            <p style="font-size:0.85rem;color:var(--muted);margin:4px 0">Taille maximale: 900MB</p>
+            <label style="display:block;margin-bottom:6px">Lien de la vidéo</label>
+            <input type="url" id="videoLink" placeholder="https://..." style="width:100%;padding:8px;border-radius:8px;background:transparent;border:1px solid rgba(255,255,255,0.04);color:inherit">
           </div>
+        </div>
+
+        <div style="background:rgba(255,255,255,0.05);padding:12px;border-radius:8px;margin:12px 0">
+          <h4 style="color:var(--accent2);margin-bottom:8px">💡 Instructions importantes</h4>
+          <p style="font-size:0.9rem;color:var(--muted);margin:0">
+            1. Téléchargez vos fichiers sur <strong>Google Drive</strong>, <strong>Dropbox</strong> ou autre<br>
+            2. Copiez le lien de partage public<br>
+            3. Collez les liens dans les champs ci-dessus
+          </p>
         </div>
 
         <div style="display:flex;gap:10px;margin-top:10px">
@@ -83,92 +90,46 @@
     function addProject(){
       const title = document.getElementById('title').value.trim();
       const desc = document.getElementById('desc').value.trim();
+      const blendLink = document.getElementById('blendLink').value.trim();
+      const imageLink = document.getElementById('imageLink').value.trim();
+      const videoLink = document.getElementById('videoLink').value.trim();
       
       if(!title || !desc){ 
         alert('Remplis le titre et la description !'); 
         return; 
       }
 
+      if(!blendLink && !imageLink && !videoLink) {
+        alert('Ajoute au moins un lien vers un fichier !');
+        return;
+      }
+
       const projectData = { 
         title, 
         desc, 
-        files: {},
-        date: new Date().toISOString() // إضافة تاريخ لإدارة أفضل
+        links: {},
+        date: new Date().toISOString()
       };
 
-      let hasFiles = false;
-
-      // Vérifier et traiter le fichier Blender (10000MB)
-      const blendFile = document.getElementById('blendFile').files[0];
-      if (blendFile) {
-        console.log('Fichier Blender détecté:', blendFile.name, blendFile.size);
-        if (blendFile.size > 10000 * 1024 * 1024) {
-          alert('Le fichier Blender est trop volumineux (max 10000MB) !');
-          return;
-        }
-        if (!blendFile.name.toLowerCase().endsWith('.blend')) {
-          alert('Veuillez sélectionner un fichier Blender (.blend) !');
-          return;
-        }
-        projectData.files.blend = {
-          url: URL.createObjectURL(blendFile),
-          name: blendFile.name,
-          size: blendFile.size,
-          type: blendFile.type
-        };
-        hasFiles = true;
-        console.log('Fichier Blender ajouté');
+      // Traiter les liens
+      if (blendLink && isValidUrl(blendLink)) {
+        projectData.links.blend = blendLink;
+      } else if (blendLink) {
+        alert('Lien Blender invalide !');
+        return;
       }
 
-      // Vérifier et traiter l'image (50MB)
-      const imageFile = document.getElementById('imageFile').files[0];
-      if (imageFile) {
-        console.log('Fichier image détecté:', imageFile.name, imageFile.size);
-        if (imageFile.size > 50 * 1024 * 1024) {
-          alert('L\'image est trop volumineuse (max 50MB) !');
-          return;
-        }
-        const validImageTypes = ['image/png', 'image/jpeg', 'image/jpg'];
-        if (!validImageTypes.includes(imageFile.type)) {
-          alert('Veuillez sélectionner une image valide (PNG, JPG) !');
-          return;
-        }
-        projectData.files.image = {
-          url: URL.createObjectURL(imageFile),
-          name: imageFile.name,
-          size: imageFile.size,
-          type: imageFile.type
-        };
-        hasFiles = true;
-        console.log('Fichier image ajouté');
+      if (imageLink && isValidUrl(imageLink)) {
+        projectData.links.image = imageLink;
+      } else if (imageLink) {
+        alert('Lien image invalide !');
+        return;
       }
 
-      // Vérifier et traiter la vidéo (900MB)
-      const videoFile = document.getElementById('videoFile').files[0];
-      if (videoFile) {
-        console.log('Fichier vidéo détecté:', videoFile.name, videoFile.size);
-        if (videoFile.size > 900 * 1024 * 1024) {
-          alert('La vidéo est trop volumineuse (max 900MB) !');
-          return;
-        }
-        const validVideoTypes = ['video/mp4', 'video/quicktime'];
-        if (!validVideoTypes.includes(videoFile.type)) {
-          alert('Veuillez sélectionner une vidéo valide (MP4, MOV) !');
-          return;
-        }
-        projectData.files.video = {
-          url: URL.createObjectURL(videoFile),
-          name: videoFile.name,
-          size: videoFile.size,
-          type: videoFile.type
-        };
-        hasFiles = true;
-        console.log('Fichier vidéo ajouté');
-      }
-
-      // Vérifier qu'au moins un fichier a été ajouté
-      if (!hasFiles) {
-        alert('Veuillez ajouter au moins un fichier (Blender, image ou vidéo) !');
+      if (videoLink && isValidUrl(videoLink)) {
+        projectData.links.video = videoLink;
+      } else if (videoLink) {
+        alert('Lien vidéo invalide !');
         return;
       }
 
@@ -177,33 +138,29 @@
       try {
         const stored = localStorage.getItem('projects');
         arr = stored ? JSON.parse(stored) : [];
-        console.log('Projets existants:', arr.length);
       } catch(e){
-        console.error('Erreur parsing projets existants:', e);
         arr = [];
       }
 
-      // Ajouter le nouveau projet en tête (recent en premier)
+      // Ajouter le nouveau projet
       arr.unshift(projectData);
       
       try {
         localStorage.setItem('projects', JSON.stringify(arr));
-        console.log('Projet sauvegardé avec succès');
       } catch(e) {
-        console.error('Erreur sauvegarde:', e);
-        alert('Erreur lors de la sauvegarde du projet !');
+        alert('Erreur lors de la sauvegarde !');
         return;
       }
 
       // Réinitialiser champs
       document.getElementById('title').value = '';
       document.getElementById('desc').value = '';
-      document.getElementById('blendFile').value = '';
-      document.getElementById('imageFile').value = '';
-      document.getElementById('videoFile').value = '';
+      document.getElementById('blendLink').value = '';
+      document.getElementById('imageLink').value = '';
+      document.getElementById('videoLink').value = '';
 
       renderList();
-      alert('Projet ajouté ✅\nFichiers: ' + Object.keys(projectData.files).join(', '));
+      alert('Projet ajouté ✅');
     }
 
     function renderList(){
@@ -211,10 +168,8 @@
       let arr = [];
       try {
         const stored = localStorage.getItem('projects');
-        console.log('Données pour render:', stored);
         arr = stored ? JSON.parse(stored) : [];
       } catch(e){
-        console.error('Erreur renderList:', e);
         arr = [];
       }
       
@@ -229,11 +184,10 @@
             <strong style="color:var(--accent1);font-size:1.1rem">${escapeHtml(p.title)}</strong>
             <div class="muted" style="font-size:0.9rem;margin:4px 0">${escapeHtml(p.desc)}</div>
             <div style="font-size:0.8rem;color:var(--muted);margin-top:6px">
-              ${p.files.blend ? '📁 Blender • ' : ''}
-              ${p.files.image ? '🖼 Image • ' : ''}
-              ${p.files.video ? '🎬 Vidéo' : ''}
+              ${p.links.blend ? '📁 Blender • ' : ''}
+              ${p.links.image ? '🖼 Image • ' : ''}
+              ${p.links.video ? '🎬 Vidéo' : ''}
             </div>
-            ${p.date ? `<div style="font-size:0.7rem;color:var(--muted);margin-top:4px">${new Date(p.date).toLocaleDateString('fr-FR')}</div>` : ''}
           </div>
           <div style="display:flex;gap:8px;margin-left:12px">
             <button class="btn ghost" onclick="removeProject(${idx})" style="padding:6px 12px;font-size:0.8rem">Supprimer</button>
@@ -243,19 +197,13 @@
     }
 
     function removeProject(index){
-      console.log('Tentative de suppression du projet à l\'index:', index);
-      
       let arr = [];
       try {
         const storedData = localStorage.getItem('projects');
-        console.log('Données stockées:', storedData);
         arr = storedData ? JSON.parse(storedData) : [];
       } catch(e) {
-        console.error('Erreur parsing JSON:', e);
         arr = [];
       }
-      
-      console.log('Tableau des projets:', arr);
       
       if(index < 0 || index >= arr.length){
         alert('Erreur: Projet non trouvé !');
@@ -263,58 +211,19 @@
       }
       
       const projectToDelete = arr[index];
-      console.log('Projet à supprimer:', projectToDelete);
       
       if(!confirm('Supprimer le projet "' + projectToDelete.title + '" ?')) {
         return;
       }
       
-      // Libérer les URLs des fichiers
-      if (projectToDelete.files) {
-        if (projectToDelete.files.blend) {
-          URL.revokeObjectURL(projectToDelete.files.blend.url);
-          console.log('URL Blender libérée');
-        }
-        if (projectToDelete.files.image) {
-          URL.revokeObjectURL(projectToDelete.files.image.url);
-          console.log('URL Image libérée');
-        }
-        if (projectToDelete.files.video) {
-          URL.revokeObjectURL(projectToDelete.files.video.url);
-          console.log('URL Vidéo libérée');
-        }
-      }
-      
-      // Supprimer le projet du tableau
       arr.splice(index, 1);
-      
-      // Sauvegarder le tableau mis à jour
       localStorage.setItem('projects', JSON.stringify(arr));
-      console.log('Projet supprimé. Nouveau tableau:', arr);
-      
-      // Re-rendre la liste
       renderList();
       alert('Projet supprimé avec succès !');
     }
 
     function clearAll(){
       if(!confirm('Supprimer TOUS les projets ? Cette action est irréversible !')) return;
-      
-      let arr = [];
-      try {
-        arr = JSON.parse(localStorage.getItem('projects')) || [];
-      } catch(e){
-        arr = [];
-      }
-      
-      // Libérer toutes les URLs des fichiers
-      arr.forEach(project => {
-        if (project.files) {
-          if (project.files.blend) URL.revokeObjectURL(project.files.blend.url);
-          if (project.files.image) URL.revokeObjectURL(project.files.image.url);
-          if (project.files.video) URL.revokeObjectURL(project.files.video.url);
-        }
-      });
       
       localStorage.removeItem('projects');
       renderList();
@@ -327,30 +236,17 @@
       return s.replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); 
     }
 
-    // دالة لفحص البيانات
-    function debugStorage() {
-      const stored = localStorage.getItem('projects');
-      console.log('=== DEBUG STORAGE ===');
-      console.log('Raw data:', stored);
-      if (stored) {
-        try {
-          const parsed = JSON.parse(stored);
-          console.log('Parsed data:', parsed);
-          console.log('Number of projects:', parsed.length);
-          parsed.forEach((p, i) => {
-            console.log(`Project ${i}:`, p.title, p.files);
-          });
-        } catch(e) {
-          console.error('Parse error:', e);
-        }
+    function isValidUrl(string) {
+      try {
+        const url = new URL(string);
+        return url.protocol === 'http:' || url.protocol === 'https:';
+      } catch (_) {
+        return false;
       }
-      console.log('=====================');
     }
 
-    // Afficher la liste au chargement si déjà connecté
     document.addEventListener('DOMContentLoaded', ()=> {
       console.log('Admin panel loaded');
-      debugStorage();
     });
   </script>
 </body>
