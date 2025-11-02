@@ -2,7 +2,13 @@
 
 function escapeHtml(s){
   if(!s) return '';
-  return s.replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+  return s.replace(/[&<>"']/g, m => ({
+    '&':'&amp;',
+    '<':'&lt;',
+    '>':'&gt;',
+    '"':'&quot;',
+    "'":'&#39;'
+  }[m]));
 }
 
 function revealOnScroll(){
@@ -19,83 +25,168 @@ function setupActions(){
   if(downloadBtn) downloadBtn.addEventListener('click', ()=> window.print());
 }
 
-// ====== JSONBin config (هنا تم وضع BIN و MASTER KEY اللي عطيتِهم) ======
-const BIN_URL = "https://api.jsonbin.io/v3/b/6907b238d0ea881f40cf61d7";
-const API_KEY = "$2a$10$dW1U1AU6.KE748DHNfw/FeP0M2dDg7q2EeJQCC13NDruzPhmnkWOa"; // master key - للاختبار فقط
-
-async function fetchProjects() {
-  try {
-    const res = await fetch(BIN_URL + "/latest", {
-      headers: { "X-Master-Key": API_KEY }
-    });
-    const j = await res.json();
-    return j.record || [];
-  } catch (e) {
-    console.error('Erreur fetch projects', e);
-    return [];
-  }
+// Fonction pour créer la visualisation 3D
+function createBlenderViewer(blendFileUrl, container) {
+  // Pour une vraie visualisation 3D, vous devriez utiliser Three.js
+  // Ceci est une version simplifiée avec une iframe et message d'information
+  const viewerHTML = `
+    <div style="background: rgba(255,255,255,0.02); border-radius: 12px; padding: 20px; margin: 10px 0; text-align: center;">
+      <h4 style="color: var(--accent1); margin-bottom: 10px;">🔄 Visualisation 3D Blender</h4>
+      <p style="color: var(--muted); margin-bottom: 15px;">
+        Le fichier Blender est prêt à être téléchargé. Pour une visualisation 3D interactive, 
+        vous pouvez utiliser des outils comme Blender Web ou le télécharger pour l'ouvrir dans Blender Desktop.
+      </p>
+      <div style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
+        <a href="${blendFileUrl}" download="modele_3d.blend" class="btn ghost">
+          📥 Télécharger Blender
+        </a>
+        <button class="btn" onclick="showBlenderInfo()">
+          ℹ️ Aide Visualisation
+        </button>
+      </div>
+    </div>
+  `;
+  container.innerHTML = viewerHTML;
 }
 
-// يُنشئ بطاقة مشروع DOM من كائن المشروع p
-function createProjectCard(p){
-  const card = document.createElement('div');
-  card.className = 'project-card';
-  // عنوان ووصف
-  const htmlParts = [];
-  htmlParts.push(`<h3>${escapeHtml(p.title)}</h3>`);
-  htmlParts.push(`<p>${escapeHtml(p.desc)}</p>`);
-
-  // إذا هناك نموذج 3D مُضمّن (base64) أو رابط
-  if(p.model){
-    // model may be a data URL (base64) or an http(s) url
-    const src = p.model;
-    htmlParts.push(`<div style="margin:8px 0">`);
-    htmlParts.push(`<model-viewer src="${src}" alt="${escapeHtml(p.title)}" camera-controls auto-rotate style="width:100%;height:320px;"></model-viewer>`);
-    htmlParts.push(`</div>`);
-  }
-
-  // معاينات الوسائط الصغيرة (صورة/فيديو) إذا وجدت
-  if(p.image){
-    htmlParts.push(`<div style="margin:8px 0"><img src="${p.image}" alt="${escapeHtml(p.imageName || p.title)}" style="max-width:100%;border-radius:8px;border:1px solid rgba(255,255,255,0.04)"></div>`);
-  }
-  if(p.video){
-    htmlParts.push(`<div style="margin:8px 0"><video controls style="width:100%;border-radius:8px;border:1px solid rgba(255,255,255,0.04)"><source src="${p.video}" type="video/mp4">Votre navigateur ne supporte pas la vidéo.</video></div>`);
-  }
-
-  // أزرار التحميل الثلاثة (تظهر لو الملف موجود)
-  const buttons = [];
-  if(p.model) buttons.push(`<a class="btn ghost" href="${p.model}" download="${p.modelName || 'model.glb'}">Télécharger 3D</a>`);
-  if(p.image) buttons.push(`<a class="btn ghost" href="${p.image}" download="${p.imageName || 'image.png'}">Télécharger Image</a>`);
-  if(p.video) buttons.push(`<a class="btn ghost" href="${p.video}" download="${p.videoName || 'video.mp4'}">Télécharger Vidéo</a>`);
-  // si projet link simple
-  if(p.link && !p.model && !p.image && !p.video) buttons.push(`<a class="btn ghost" href="${p.link}" target="_blank">Voir le projet</a>`);
-
-  const btnHtml = `<div style="margin-top:10px">${buttons.join(' ')}</div>`;
-
-  card.innerHTML = htmlParts.join('') + btnHtml;
-  return card;
+function showBlenderInfo() {
+  alert("Pour visualiser les modèles 3D Blender de manière interactive:\n\n1. Téléchargez le fichier .blend\n2. Ouvrez-le avec Blender (logiciel gratuit)\n3. Ou utilisez Blender Web Viewer en ligne\n\nLes fonctionnalités de rotation/zoom sont disponibles dans Blender.");
 }
 
-// يضيف المشاريع المأخوذة من BIN إلى الحاوية #project-list
-async function appendStoredProjects(){
+// Fonction pour créer la galerie médias
+function createMediaGallery(project, container) {
+  let mediaHTML = '<div style="margin: 15px 0;">';
+  
+  if (project.imageFile) {
+    mediaHTML += `
+      <div style="margin-bottom: 15px;">
+        <h4 style="color: var(--accent2); margin-bottom: 8px;">🖼️ Image du Projet</h4>
+        <img src="${project.imageFile}" 
+             alt="${project.title}" 
+             style="max-width: 100%; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1);">
+        <div style="margin-top: 10px;">
+          <a href="${project.imageFile}" download="${project.imageName || 'image.png'}" class="btn ghost">
+            📥 Télécharger Image
+          </a>
+        </div>
+      </div>
+    `;
+  }
+  
+  if (project.videoFile) {
+    mediaHTML += `
+      <div style="margin-bottom: 15px;">
+        <h4 style="color: var(--accent2); margin-bottom: 8px;">🎥 Vidéo du Projet</h4>
+        <video controls 
+               style="max-width: 100%; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1);">
+          <source src="${project.videoFile}" type="video/mp4">
+          Votre navigateur ne supporte pas la lecture vidéo.
+        </video>
+        <div style="margin-top: 10px;">
+          <a href="${project.videoFile}" download="${project.videoName || 'video.mp4'}" class="btn ghost">
+            📥 Télécharger Vidéo
+          </a>
+        </div>
+      </div>
+    `;
+  }
+  
+  mediaHTML += '</div>';
+  container.innerHTML = mediaHTML;
+}
+
+// ✅ Fonction principale pour ajouter les projets stockés
+function appendStoredProjects(){
   try {
-    const stored = await fetchProjects();
+    const stored = JSON.parse(localStorage.getItem('projects')) || [];
     const container = document.getElementById('project-list');
-    if(!container) return;
-    // نحتفظ بالعناوين الموجودة حتى لا نكرر
-    const existingTitles = Array.from(container.querySelectorAll('.project-card h3')).map(h=>h.textContent.trim());
+    if(!container || stored.length === 0) return;
 
-    // نعرض الأحدث أولا (JSONBin قد يحتوي ترتيب)
+    // Éviter les doublons
+    const existingTitles = Array.from(container.querySelectorAll('.project-card h3'))
+                               .map(h=>h.textContent.trim());
+
     stored.forEach(p=>{
-      if(existingTitles.includes((p.title||'').trim())) return;
-      const card = createProjectCard(p);
-      container.appendChild(card);
+      if (existingTitles.includes(p.title.trim())) return;
+
+      const div = document.createElement('div');
+      div.className = 'project-card';
+      
+      let buttonsHTML = '';
+      let extraContent = '';
+      
+      if (p.type === 'blender' && p.blendFile) {
+        buttonsHTML = `
+          <a href="${p.blendFile}" download="${p.fileName || 'modele_3d.blend'}" class="btn ghost">
+            📥 Télécharger Blender
+          </a>
+        `;
+        // Ajouter un conteneur pour la visualisation 3D
+        extraContent = `<div id="viewer-${p.title.replace(/\s+/g, '-')}" class="blender-viewer"></div>`;
+      } 
+      else if (p.type === 'media') {
+        buttonsHTML = '';
+        if (p.imageFile) {
+          buttonsHTML += `
+            <a href="${p.imageFile}" download="${p.imageName || 'image.png'}" class="btn ghost">
+              📥 Télécharger Image
+            </a>
+          `;
+        }
+        if (p.videoFile) {
+          buttonsHTML += `
+            <a href="${p.videoFile}" download="${p.videoName || 'video.mp4'}" class="btn ghost">
+              📥 Télécharger Vidéo
+            </a>
+          `;
+        }
+        // Ajouter un conteneur pour la galerie médias
+        extraContent = `<div id="media-${p.title.replace(/\s+/g, '-')}" class="media-gallery"></div>`;
+      }
+      else {
+        // Projet avec lien standard
+        buttonsHTML = `
+          <a href="${p.link}" target="_blank" class="btn ghost">
+            Voir le projet
+          </a>
+        `;
+      }
+
+      div.innerHTML = `
+        <h3>${escapeHtml(p.title)}</h3>
+        <p>${escapeHtml(p.desc)}</p>
+        ${p.type === 'blender' ? '<p style="font-size:0.9rem;color:#7c4dff">🎮 Fichier Blender 3D - Téléchargez et ouvrez dans Blender</p>' : ''}
+        ${p.type === 'media' ? '<p style="font-size:0.9rem;color:#00e5ff">🖼️ Projet avec Médias - Images et Vidéos disponibles</p>' : ''}
+        <div style="display: flex; gap: 10px; flex-wrap: wrap; margin: 15px 0;">
+          ${buttonsHTML}
+        </div>
+        ${extraContent}
+      `;
+      
+      container.appendChild(div);
+      
+      // Initialiser les visualisations après l'ajout au DOM
+      setTimeout(() => {
+        if (p.type === 'blender' && p.blendFile) {
+          const viewerContainer = document.getElementById(`viewer-${p.title.replace(/\s+/g, '-')}`);
+          if (viewerContainer) {
+            createBlenderViewer(p.blendFile, viewerContainer);
+          }
+        }
+        else if (p.type === 'media') {
+          const mediaContainer = document.getElementById(`media-${p.title.replace(/\s+/g, '-')}`);
+          if (mediaContainer) {
+            createMediaGallery(p, mediaContainer);
+          }
+        }
+      }, 100);
     });
   } catch(e){
-    console.error('Erreur lors de l\'ajout des projets', e);
+    console.error('Erreur lors du chargement des projets depuis localStorage', e);
   }
 }
 
+// Initialisation
 document.addEventListener('DOMContentLoaded', ()=>{
   appendStoredProjects();
   setupActions();
