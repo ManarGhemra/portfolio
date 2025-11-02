@@ -34,19 +34,19 @@
           <div style="margin-bottom:10px">
             <label style="display:block;margin-bottom:6px">Fichier Blender (.blend)</label>
             <input type="file" id="blendFile" accept=".blend" style="width:100%;padding:8px;border-radius:8px;background:transparent;border:1px solid rgba(255,255,255,0.04);color:inherit">
-            <p style="font-size:0.85rem;color:var(--muted);margin:4px 0">Taille maximale: 10MB</p>
+            <p style="font-size:0.85rem;color:var(--muted);margin:4px 0">Taille maximale: 10000MB</p>
           </div>
           
           <div style="margin-bottom:10px">
             <label style="display:block;margin-bottom:6px">Image du projet (.png, .jpg)</label>
             <input type="file" id="imageFile" accept=".png,.jpg,.jpeg" style="width:100%;padding:8px;border-radius:8px;background:transparent;border:1px solid rgba(255,255,255,0.04);color:inherit">
-            <p style="font-size:0.85rem;color:var(--muted);margin:4px 0">Taille maximale: 5MB</p>
+            <p style="font-size:0.85rem;color:var(--muted);margin:4px 0">Taille maximale: 50MB</p>
           </div>
           
           <div style="margin-bottom:10px">
             <label style="display:block;margin-bottom:6px">Vidéo du projet (.mp4, .mov)</label>
             <input type="file" id="videoFile" accept=".mp4,.mov" style="width:100%;padding:8px;border-radius:8px;background:transparent;border:1px solid rgba(255,255,255,0.04);color:inherit">
-            <p style="font-size:0.85rem;color:var(--muted);margin:4px 0">Taille maximale: 50MB</p>
+            <p style="font-size:0.85rem;color:var(--muted);margin:4px 0">Taille maximale: 900MB</p>
           </div>
         </div>
 
@@ -91,11 +91,11 @@
 
       const projectData = { title, desc, files: {} };
 
-      // Vérifier et traiter le fichier Blender
+      // Vérifier et traiter le fichier Blender (10000MB)
       const blendFile = document.getElementById('blendFile').files[0];
       if (blendFile) {
-        if (blendFile.size > 10 * 1024 * 1024) {
-          alert('Le fichier Blender est trop volumineux (max 10MB) !');
+        if (blendFile.size > 10000 * 1024 * 1024) {
+          alert('Le fichier Blender est trop volumineux (max 10000MB) !');
           return;
         }
         if (!blendFile.name.toLowerCase().endsWith('.blend')) {
@@ -108,11 +108,11 @@
         };
       }
 
-      // Vérifier et traiter l'image
+      // Vérifier et traiter l'image (50MB)
       const imageFile = document.getElementById('imageFile').files[0];
       if (imageFile) {
-        if (imageFile.size > 5 * 1024 * 1024) {
-          alert('L\'image est trop volumineuse (max 5MB) !');
+        if (imageFile.size > 50 * 1024 * 1024) {
+          alert('L\'image est trop volumineuse (max 50MB) !');
           return;
         }
         const validImageTypes = ['image/png', 'image/jpeg', 'image/jpg'];
@@ -126,11 +126,11 @@
         };
       }
 
-      // Vérifier et traiter la vidéo
+      // Vérifier et traiter la vidéo (900MB)
       const videoFile = document.getElementById('videoFile').files[0];
       if (videoFile) {
-        if (videoFile.size > 50 * 1024 * 1024) {
-          alert('La vidéo est trop volumineuse (max 50MB) !');
+        if (videoFile.size > 900 * 1024 * 1024) {
+          alert('La vidéo est trop volumineuse (max 900MB) !');
           return;
         }
         const validVideoTypes = ['video/mp4', 'video/quicktime'];
