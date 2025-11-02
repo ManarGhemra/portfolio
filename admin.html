@@ -64,13 +64,50 @@
 
   <script>
     const PASSWORD = 'manar2025';
+    let db;
 
-    function login(){
+    // Initialiser IndexedDB
+    function initDB() {
+      return new Promise((resolve, reject) => {
+        const request = indexedDB.open('PortfolioDB', 1);
+        
+        request.onerror = () => reject(request.error);
+        request.onsuccess = () => {
+          db = request.result;
+          resolve(db);
+        };
+        
+        request.onupgradeneeded = (event) => {
+          const database = event.target.result;
+          if (!database.objectStoreNames.contains('projects')) {
+            const store = database.createObjectStore('projects', { keyPath: 'id', autoIncrement: true });
+            store.createIndex('title', 'title', { unique: false });
+          }
+        };
+      });
+    }
+
+    // Convertir fichier en Base64
+    function fileToBase64(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+    }
+
+    async function login(){
       const v = document.getElementById('pwd').value;
       if(v === PASSWORD){
-        document.getElementById('loginBlock').style.display = 'none';
-        document.getElementById('adminPanel').style.display = 'block';
-        renderList();
+        try {
+          await initDB();
+          document.getElementById('loginBlock').style.display = 'none';
+          document.getElementById('adminPanel').style.display = 'block';
+          renderList();
+        } catch (error) {
+          alert('Erreur initialisation base de données: ' + error.message);
+        }
       } else alert('Mot de passe incorrect !');
     }
 
@@ -80,7 +117,7 @@
       document.getElementById('adminPanel').style.display = 'none';
     }
 
-    function addProject(){
+    async function addProject(){
       const title = document.getElementById('title').value.trim();
       const desc = document.getElementById('desc').value.trim();
       
@@ -93,232 +130,190 @@
         title, 
         desc, 
         files: {},
-        date: new Date().toISOString() // إضافة تاريخ لإدارة أفضل
+        date: new Date().toISOString()
       };
 
       let hasFiles = false;
 
-      // Vérifier et traiter le fichier Blender (10000MB)
-      const blendFile = document.getElementById('blendFile').files[0];
-      if (blendFile) {
-        console.log('Fichier Blender détecté:', blendFile.name, blendFile.size);
-        if (blendFile.size > 10000 * 1024 * 1024) {
-          alert('Le fichier Blender est trop volumineux (max 10000MB) !');
-          return;
-        }
-        if (!blendFile.name.toLowerCase().endsWith('.blend')) {
-          alert('Veuillez sélectionner un fichier Blender (.blend) !');
-          return;
-        }
-        projectData.files.blend = {
-          url: URL.createObjectURL(blendFile),
-          name: blendFile.name,
-          size: blendFile.size,
-          type: blendFile.type
-        };
-        hasFiles = true;
-        console.log('Fichier Blender ajouté');
-      }
-
-      // Vérifier et traiter l'image (50MB)
-      const imageFile = document.getElementById('imageFile').files[0];
-      if (imageFile) {
-        console.log('Fichier image détecté:', imageFile.name, imageFile.size);
-        if (imageFile.size > 50 * 1024 * 1024) {
-          alert('L\'image est trop volumineuse (max 50MB) !');
-          return;
-        }
-        const validImageTypes = ['image/png', 'image/jpeg', 'image/jpg'];
-        if (!validImageTypes.includes(imageFile.type)) {
-          alert('Veuillez sélectionner une image valide (PNG, JPG) !');
-          return;
-        }
-        projectData.files.image = {
-          url: URL.createObjectURL(imageFile),
-          name: imageFile.name,
-          size: imageFile.size,
-          type: imageFile.type
-        };
-        hasFiles = true;
-        console.log('Fichier image ajouté');
-      }
-
-      // Vérifier et traiter la vidéo (900MB)
-      const videoFile = document.getElementById('videoFile').files[0];
-      if (videoFile) {
-        console.log('Fichier vidéo détecté:', videoFile.name, videoFile.size);
-        if (videoFile.size > 900 * 1024 * 1024) {
-          alert('La vidéo est trop volumineuse (max 900MB) !');
-          return;
-        }
-        const validVideoTypes = ['video/mp4', 'video/quicktime'];
-        if (!validVideoTypes.includes(videoFile.type)) {
-          alert('Veuillez sélectionner une vidéo valide (MP4, MOV) !');
-          return;
-        }
-        projectData.files.video = {
-          url: URL.createObjectURL(videoFile),
-          name: videoFile.name,
-          size: videoFile.size,
-          type: videoFile.type
-        };
-        hasFiles = true;
-        console.log('Fichier vidéo ajouté');
-      }
-
-      // Vérifier qu'au moins un fichier a été ajouté
-      if (!hasFiles) {
-        alert('Veuillez ajouter au moins un fichier (Blender, image ou vidéo) !');
-        return;
-      }
-
-      // Récupérer les projets existants
-      let arr = [];
       try {
-        const stored = localStorage.getItem('projects');
-        arr = stored ? JSON.parse(stored) : [];
-        console.log('Projets existants:', arr.length);
-      } catch(e){
-        console.error('Erreur parsing projets existants:', e);
-        arr = [];
+        // Traiter le fichier Blender
+        const blendFile = document.getElementById('blendFile').files[0];
+        if (blendFile) {
+          if (blendFile.size > 10000 * 1024 * 1024) {
+            alert('Le fichier Blender est trop volumineux (max 10000MB) !');
+            return;
+          }
+          if (!blendFile.name.toLowerCase().endsWith('.blend')) {
+            alert('Veuillez sélectionner un fichier Blender (.blend) !');
+            return;
+          }
+          const base64 = await fileToBase64(blendFile);
+          projectData.files.blend = {
+            data: base64,
+            name: blendFile.name,
+            size: blendFile.size,
+            type: blendFile.type
+          };
+          hasFiles = true;
+        }
+
+        // Traiter l'image
+        const imageFile = document.getElementById('imageFile').files[0];
+        if (imageFile) {
+          if (imageFile.size > 50 * 1024 * 1024) {
+            alert('L\'image est trop volumineuse (max 50MB) !');
+            return;
+          }
+          const validImageTypes = ['image/png', 'image/jpeg', 'image/jpg'];
+          if (!validImageTypes.includes(imageFile.type)) {
+            alert('Veuillez sélectionner une image valide (PNG, JPG) !');
+            return;
+          }
+          const base64 = await fileToBase64(imageFile);
+          projectData.files.image = {
+            data: base64,
+            name: imageFile.name,
+            size: imageFile.size,
+            type: imageFile.type
+          };
+          hasFiles = true;
+        }
+
+        // Traiter la vidéo
+        const videoFile = document.getElementById('videoFile').files[0];
+        if (videoFile) {
+          if (videoFile.size > 900 * 1024 * 1024) {
+            alert('La vidéo est trop volumineuse (max 900MB) !');
+            return;
+          }
+          const validVideoTypes = ['video/mp4', 'video/quicktime'];
+          if (!validVideoTypes.includes(videoFile.type)) {
+            alert('Veuillez sélectionner une vidéo valide (MP4, MOV) !');
+            return;
+          }
+          const base64 = await fileToBase64(videoFile);
+          projectData.files.video = {
+            data: base64,
+            name: videoFile.name,
+            size: videoFile.size,
+            type: videoFile.type
+          };
+          hasFiles = true;
+        }
+
+        if (!hasFiles) {
+          alert('Veuillez ajouter au moins un fichier (Blender, image ou vidéo) !');
+          return;
+        }
+
+        // Sauvegarder dans IndexedDB
+        const transaction = db.transaction(['projects'], 'readwrite');
+        const store = transaction.objectStore('projects');
+        const request = store.add(projectData);
+
+        request.onsuccess = () => {
+          document.getElementById('title').value = '';
+          document.getElementById('desc').value = '';
+          document.getElementById('blendFile').value = '';
+          document.getElementById('imageFile').value = '';
+          document.getElementById('videoFile').value = '';
+          renderList();
+          alert('Projet ajouté ✅\nFichiers: ' + Object.keys(projectData.files).join(', '));
+        };
+
+        request.onerror = () => {
+          alert('Erreur lors de la sauvegarde du projet !');
+        };
+
+      } catch (error) {
+        alert('Erreur: ' + error.message);
       }
-
-      // Ajouter le nouveau projet en tête (recent en premier)
-      arr.unshift(projectData);
-      
-      try {
-        localStorage.setItem('projects', JSON.stringify(arr));
-        console.log('Projet sauvegardé avec succès');
-      } catch(e) {
-        console.error('Erreur sauvegarde:', e);
-        alert('Erreur lors de la sauvegarde du projet !');
-        return;
-      }
-
-      // Réinitialiser champs
-      document.getElementById('title').value = '';
-      document.getElementById('desc').value = '';
-      document.getElementById('blendFile').value = '';
-      document.getElementById('imageFile').value = '';
-      document.getElementById('videoFile').value = '';
-
-      renderList();
-      alert('Projet ajouté ✅\nFichiers: ' + Object.keys(projectData.files).join(', '));
     }
 
-    function renderList(){
+    async function renderList(){
       const list = document.getElementById('currentList');
-      let arr = [];
+      
       try {
-        const stored = localStorage.getItem('projects');
-        console.log('Données pour render:', stored);
-        arr = stored ? JSON.parse(stored) : [];
-      } catch(e){
-        console.error('Erreur renderList:', e);
-        arr = [];
-      }
-      
-      if(arr.length === 0){
-        list.innerHTML = '<p class="muted">Aucun projet enregistré.</p>';
-        return;
-      }
-      
-      list.innerHTML = arr.map((p,idx)=>`
-        <div style="display:flex;justify-content:space-between;align-items:center;padding:12px;border-radius:8px;background:rgba(255,255,255,0.02);margin-bottom:10px;border:1px solid rgba(255,255,255,0.05)">
-          <div style="flex:1">
-            <strong style="color:var(--accent1);font-size:1.1rem">${escapeHtml(p.title)}</strong>
-            <div class="muted" style="font-size:0.9rem;margin:4px 0">${escapeHtml(p.desc)}</div>
-            <div style="font-size:0.8rem;color:var(--muted);margin-top:6px">
-              ${p.files.blend ? '📁 Blender • ' : ''}
-              ${p.files.image ? '🖼 Image • ' : ''}
-              ${p.files.video ? '🎬 Vidéo' : ''}
+        const projects = await getAllProjects();
+        
+        if(projects.length === 0){
+          list.innerHTML = '<p class="muted">Aucun projet enregistré.</p>';
+          return;
+        }
+        
+        list.innerHTML = projects.map((p,idx)=>`
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:12px;border-radius:8px;background:rgba(255,255,255,0.02);margin-bottom:10px;border:1px solid rgba(255,255,255,0.05)">
+            <div style="flex:1">
+              <strong style="color:var(--accent1);font-size:1.1rem">${escapeHtml(p.title)}</strong>
+              <div class="muted" style="font-size:0.9rem;margin:4px 0">${escapeHtml(p.desc)}</div>
+              <div style="font-size:0.8rem;color:var(--muted);margin-top:6px">
+                ${p.files.blend ? '📁 Blender • ' : ''}
+                ${p.files.image ? '🖼 Image • ' : ''}
+                ${p.files.video ? '🎬 Vidéo' : ''}
+              </div>
+              ${p.date ? `<div style="font-size:0.7rem;color:var(--muted);margin-top:4px">${new Date(p.date).toLocaleDateString('fr-FR')}</div>` : ''}
             </div>
-            ${p.date ? `<div style="font-size:0.7rem;color:var(--muted);margin-top:4px">${new Date(p.date).toLocaleDateString('fr-FR')}</div>` : ''}
+            <div style="display:flex;gap:8px;margin-left:12px">
+              <button class="btn ghost" onclick="removeProject(${p.id})" style="padding:6px 12px;font-size:0.8rem">Supprimer</button>
+            </div>
           </div>
-          <div style="display:flex;gap:8px;margin-left:12px">
-            <button class="btn ghost" onclick="removeProject(${idx})" style="padding:6px 12px;font-size:0.8rem">Supprimer</button>
-          </div>
-        </div>
-      `).join('');
+        `).join('');
+      } catch (error) {
+        list.innerHTML = '<p class="muted">Erreur de chargement des projets.</p>';
+      }
     }
 
-    function removeProject(index){
-      console.log('Tentative de suppression du projet à l\'index:', index);
+    function getAllProjects() {
+      return new Promise((resolve, reject) => {
+        const transaction = db.transaction(['projects'], 'readonly');
+        const store = transaction.objectStore('projects');
+        const request = store.getAll();
+        
+        request.onsuccess = () => resolve(request.result);
+        request.onerror = () => reject(request.error);
+      });
+    }
+
+    async function removeProject(id){
+      if(!confirm('Supprimer ce projet ?')) return;
       
-      let arr = [];
       try {
-        const storedData = localStorage.getItem('projects');
-        console.log('Données stockées:', storedData);
-        arr = storedData ? JSON.parse(storedData) : [];
-      } catch(e) {
-        console.error('Erreur parsing JSON:', e);
-        arr = [];
+        const transaction = db.transaction(['projects'], 'readwrite');
+        const store = transaction.objectStore('projects');
+        const request = store.delete(id);
+        
+        request.onsuccess = () => {
+          renderList();
+          alert('Projet supprimé avec succès !');
+        };
+        
+        request.onerror = () => {
+          alert('Erreur lors de la suppression !');
+        };
+      } catch (error) {
+        alert('Erreur: ' + error.message);
       }
-      
-      console.log('Tableau des projets:', arr);
-      
-      if(index < 0 || index >= arr.length){
-        alert('Erreur: Projet non trouvé !');
-        return;
-      }
-      
-      const projectToDelete = arr[index];
-      console.log('Projet à supprimer:', projectToDelete);
-      
-      if(!confirm('Supprimer le projet "' + projectToDelete.title + '" ?')) {
-        return;
-      }
-      
-      // Libérer les URLs des fichiers
-      if (projectToDelete.files) {
-        if (projectToDelete.files.blend) {
-          URL.revokeObjectURL(projectToDelete.files.blend.url);
-          console.log('URL Blender libérée');
-        }
-        if (projectToDelete.files.image) {
-          URL.revokeObjectURL(projectToDelete.files.image.url);
-          console.log('URL Image libérée');
-        }
-        if (projectToDelete.files.video) {
-          URL.revokeObjectURL(projectToDelete.files.video.url);
-          console.log('URL Vidéo libérée');
-        }
-      }
-      
-      // Supprimer le projet du tableau
-      arr.splice(index, 1);
-      
-      // Sauvegarder le tableau mis à jour
-      localStorage.setItem('projects', JSON.stringify(arr));
-      console.log('Projet supprimé. Nouveau tableau:', arr);
-      
-      // Re-rendre la liste
-      renderList();
-      alert('Projet supprimé avec succès !');
     }
 
-    function clearAll(){
+    async function clearAll(){
       if(!confirm('Supprimer TOUS les projets ? Cette action est irréversible !')) return;
       
-      let arr = [];
       try {
-        arr = JSON.parse(localStorage.getItem('projects')) || [];
-      } catch(e){
-        arr = [];
+        const transaction = db.transaction(['projects'], 'readwrite');
+        const store = transaction.objectStore('projects');
+        const request = store.clear();
+        
+        request.onsuccess = () => {
+          renderList();
+          alert('Tous les projets ont été supprimés.');
+        };
+        
+        request.onerror = () => {
+          alert('Erreur lors de la suppression !');
+        };
+      } catch (error) {
+        alert('Erreur: ' + error.message);
       }
-      
-      // Libérer toutes les URLs des fichiers
-      arr.forEach(project => {
-        if (project.files) {
-          if (project.files.blend) URL.revokeObjectURL(project.files.blend.url);
-          if (project.files.image) URL.revokeObjectURL(project.files.image.url);
-          if (project.files.video) URL.revokeObjectURL(project.files.video.url);
-        }
-      });
-      
-      localStorage.removeItem('projects');
-      renderList();
-      alert('Tous les projets ont été supprimés.');
     }
 
     // utilitaires
@@ -327,30 +322,8 @@
       return s.replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); 
     }
 
-    // دالة لفحص البيانات
-    function debugStorage() {
-      const stored = localStorage.getItem('projects');
-      console.log('=== DEBUG STORAGE ===');
-      console.log('Raw data:', stored);
-      if (stored) {
-        try {
-          const parsed = JSON.parse(stored);
-          console.log('Parsed data:', parsed);
-          console.log('Number of projects:', parsed.length);
-          parsed.forEach((p, i) => {
-            console.log(`Project ${i}:`, p.title, p.files);
-          });
-        } catch(e) {
-          console.error('Parse error:', e);
-        }
-      }
-      console.log('=====================');
-    }
-
-    // Afficher la liste au chargement si déjà connecté
     document.addEventListener('DOMContentLoaded', ()=> {
       console.log('Admin panel loaded');
-      debugStorage();
     });
   </script>
 </body>
