@@ -1,6 +1,5 @@
-// js.js - avec visualisation 3D interactive pour Blender
+// js.js - مع دعم كامل للنماذج ثلاثية الأبعاد
 
-// Import des bibliothèques Three.js (déjà incluses dans HTML)
 let blenderViewers = new Map();
 
 function escapeHtml(s){
@@ -28,66 +27,28 @@ function setupActions(){
   if(downloadBtn) downloadBtn.addEventListener('click', ()=> window.print());
 }
 
-// Fonction pour créer la visualisation 3D interactive
-function createInteractiveBlenderViewer(gltfFileUrl, container, isGLB = false) {
-  const viewerId = 'viewer-' + Math.random().toString(36).substr(2, 9);
-  
-  const viewerHTML = `
-    <div class="blender-viewer-container">
-      <div class="viewer-controls">
-        <button class="viewer-btn" onclick="resetCamera('${viewerId}')">🔄 Reset</button>
-        <button class="viewer-btn" onclick="toggleAutoRotate('${viewerId}')">⚡ Auto-rotation</button>
-        <span class="viewer-help">🎮 Utilise la souris pour tourner, zoomer et déplacer</span>
-      </div>
-      <div id="${viewerId}" class="blender-viewer-3d"></div>
-      <div class="viewer-loading" id="loading-${viewerId}">
-        <div class="loading-spinner"></div>
-        <p>Chargement du modèle 3D...</p>
-      </div>
-    </div>
-  `;
-  
-  container.innerHTML = viewerHTML;
-  
-  // Initialiser Three.js après un court délai
-  setTimeout(() => initThreeJS(viewerId, gltfFileUrl, isGLB), 100);
-}
-
-// Initialisation de Three.js
-function initThreeJS(containerId, gltfUrl, isGLB) {
-  const container = document.getElementById(containerId);
-  const loadingElement = document.getElementById('loading-' + containerId);
-  
-  if (!container) return;
-  
-  // Dimensions
-  const width = container.clientWidth;
-  const height = Math.min(400, window.innerHeight * 0.6);
-  
-  // Scene
+// دالة لتحميل النماذج ثلاثية الأبعاد
+function load3DModel(modelUrl, fileType, container, loadingElement) {
   const scene = new THREE.Scene();
   scene.background = new THREE.Color(0x0a0a12);
   
-  // Camera
+  const width = container.clientWidth;
+  const height = Math.min(400, window.innerHeight * 0.6);
+  
   const camera = new THREE.PerspectiveCamera(75, width / height, 0.1, 1000);
   camera.position.z = 5;
   
-  // Renderer
   const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
   renderer.setSize(width, height);
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  container.innerHTML = '';
   container.appendChild(renderer.domElement);
   
-  // Controls
   const controls = new THREE.OrbitControls(camera, renderer.domElement);
   controls.enableDamping = true;
   controls.dampingFactor = 0.05;
-  controls.screenSpacePanning = false;
-  controls.minDistance = 1;
-  controls.maxDistance = 20;
-  controls.maxPolarAngle = Math.PI;
   
-  // Lighting
+  // إضاءة
   const ambientLight = new THREE.AmbientLight(0x404040, 1);
   scene.add(ambientLight);
   
@@ -99,23 +60,44 @@ function initThreeJS(containerId, gltfUrl, isGLB) {
   directionalLight2.position.set(-5, -5, -5);
   scene.add(directionalLight2);
   
-  // Grid helper
+  // شبكة مساعدة
   const gridHelper = new THREE.GridHelper(10, 10, 0x444444, 0x222222);
   scene.add(gridHelper);
   
-  // Axes helper
-  const axesHelper = new THREE.AxesHelper(3);
-  scene.add(axesHelper);
+  let loader;
+  let model;
   
-  // Load GLTF model
-  const loader = new THREE.GLTFLoader();
+  switch(fileType) {
+    case 'gltf':
+    case 'glb':
+      loader = new THREE.GLTFLoader();
+      break;
+    case 'obj':
+      loader = new THREE.OBJLoader();
+      break;
+    case 'fbx':
+      loader = new THREE.FBXLoader();
+      break;
+    default:
+      console.error('Format non supporté:', fileType);
+      if (loadingElement) {
+        loadingElement.innerHTML = '<p style="color: #ff4444;">❌ Format de fichier non supporté</p>';
+      }
+      return;
+  }
   
   loader.load(
-    gltfUrl,
-    function (gltf) {
-      const model = gltf.scene;
+    modelUrl,
+    function (object) {
+      if (fileType === 'gltf' || fileType === 'glb') {
+        model = object.scene;
+      } else {
+        model = object;
+      }
       
-      // Ajuster l'échelle et position
+      scene.add(model);
+      
+      // ضبط المقياس والموقع
       const box = new THREE.Box3().setFromObject(model);
       const center = box.getCenter(new THREE.Vector3());
       const size = box.getSize(new THREE.Vector3());
@@ -128,31 +110,30 @@ function initThreeJS(containerId, gltfUrl, isGLB) {
       model.position.y = -center.y * scale;
       model.position.z = -center.z * scale;
       
-      scene.add(model);
-      
-      // Cacher l'écran de chargement
       if (loadingElement) {
         loadingElement.style.display = 'none';
       }
       
-      console.log('Modèle 3D chargé avec succès');
+      console.log('Modèle 3D chargé avec succès:', fileType);
     },
     function (xhr) {
-      // Progression du chargement
       const percent = (xhr.loaded / xhr.total * 100);
-      if (loadingElement) {
+      if (loadingElement && xhr.total) {
         loadingElement.querySelector('p').textContent = `Chargement: ${Math.round(percent)}%`;
       }
     },
     function (error) {
-      console.error('Erreur de chargement du modèle:', error);
+      console.error('Erreur de chargement:', error);
       if (loadingElement) {
-        loadingElement.innerHTML = '<p style="color: #ff4444;">❌ Erreur de chargement du modèle 3D</p>';
+        loadingElement.innerHTML = `
+          <p style="color: #ff4444;">❌ Erreur de chargement</p>
+          <p style="font-size:0.8rem;color:var(--muted);">Format: ${fileType}</p>
+          <button class="viewer-btn" onclick="retryLoad('${modelUrl}', '${fileType}', this.parentElement)">Réessayer</button>
+        `;
       }
     }
   );
   
-  // Animation
   function animate() {
     requestAnimationFrame(animate);
     controls.update();
@@ -160,7 +141,6 @@ function initThreeJS(containerId, gltfUrl, isGLB) {
   }
   animate();
   
-  // Resize handler
   function handleResize() {
     const newWidth = container.clientWidth;
     const newHeight = Math.min(400, window.innerHeight * 0.6);
@@ -172,8 +152,8 @@ function initThreeJS(containerId, gltfUrl, isGLB) {
   
   window.addEventListener('resize', handleResize);
   
-  // Stocker les références
-  blenderViewers.set(containerId, {
+  const viewerId = 'viewer-' + Math.random().toString(36).substr(2, 9);
+  blenderViewers.set(viewerId, {
     scene,
     camera,
     renderer,
@@ -181,9 +161,60 @@ function initThreeJS(containerId, gltfUrl, isGLB) {
     animate,
     handleResize
   });
+  
+  return viewerId;
 }
 
-// Contrôles de la visualisation
+function retryLoad(modelUrl, fileType, loadingElement) {
+  const container = loadingElement.parentElement.querySelector('.blender-viewer-3d');
+  if (container) {
+    loadingElement.style.display = 'flex';
+    loadingElement.innerHTML = `
+      <div class="loading-spinner"></div>
+      <p>Nouvelle tentative de chargement...</p>
+    `;
+    setTimeout(() => load3DModel(modelUrl, fileType, container, loadingElement), 500);
+  }
+}
+
+// إنشاء عارض ثلاثي الأبعاد تفاعلي
+function createInteractiveBlenderViewer(modelFileUrl, fileType, container) {
+  const viewerId = 'viewer-' + Math.random().toString(36).substr(2, 9);
+  
+  const viewerHTML = `
+    <div class="blender-viewer-container">
+      <div class="viewer-controls">
+        <button class="viewer-btn" onclick="resetCamera('${viewerId}')">🔄 Reset</button>
+        <button class="viewer-btn" onclick="toggleAutoRotate('${viewerId}')">⚡ Auto-rotation</button>
+        <button class="viewer-btn" onclick="toggleGrid('${viewerId}')">🔲 Grille</button>
+        <span class="viewer-help">🎮 Souris: Rotation | Molette: Zoom | Clic droit: Déplacer</span>
+      </div>
+      <div id="${viewerId}-container" class="blender-viewer-3d"></div>
+      <div class="viewer-loading" id="loading-${viewerId}">
+        <div class="loading-spinner"></div>
+        <p>Chargement du modèle 3D...</p>
+      </div>
+      <div class="viewer-info">
+        <span>Format: ${fileType.toUpperCase()}</span>
+        <span>•</span>
+        <span>Contrôles actifs</span>
+      </div>
+    </div>
+  `;
+  
+  container.innerHTML = viewerHTML;
+  
+  setTimeout(() => {
+    const viewerContainer = document.getElementById(`${viewerId}-container`);
+    const loadingElement = document.getElementById(`loading-${viewerId}`);
+    
+    if (viewerContainer && loadingElement) {
+      load3DModel(modelFileUrl, fileType, viewerContainer, loadingElement);
+    }
+  }, 100);
+}
+
+// عناصر التحكم
 function resetCamera(viewerId) {
   const viewer = blenderViewers.get(viewerId);
   if (viewer) {
@@ -198,7 +229,17 @@ function toggleAutoRotate(viewerId) {
   }
 }
 
-// Fonction pour la galerie médias
+function toggleGrid(viewerId) {
+  const viewer = blenderViewers.get(viewerId);
+  if (viewer && viewer.scene) {
+    const grid = viewer.scene.getObjectByName('gridHelper');
+    if (grid) {
+      grid.visible = !grid.visible;
+    }
+  }
+}
+
+// معرض الوسائط
 function createMediaGallery(project, container) {
   let mediaHTML = '<div class="media-gallery">';
   
@@ -237,7 +278,7 @@ function createMediaGallery(project, container) {
   container.innerHTML = mediaHTML;
 }
 
-// ✅ Fonction principale pour ajouter les projets
+// ✅ الدالة الرئيسية لإضافة المشاريع
 function appendStoredProjects(){
   try {
     const stored = JSON.parse(localStorage.getItem('projects')) || [];
@@ -256,13 +297,13 @@ function appendStoredProjects(){
       let buttonsHTML = '';
       let extraContent = '';
       
-      if (p.type === 'blender' && p.gltfFile) {
+      if (p.type === 'blender' && p.modelFile) {
         buttonsHTML = `
           <a href="${p.blendFile}" download="${p.blendFileName || 'modele_3d.blend'}" class="btn ghost">
             📥 Télécharger .blend
           </a>
-          <a href="${p.gltfFile}" download="${p.gltfFileName || 'modele_3d.glb'}" class="btn ghost">
-            📥 Télécharger .gltf
+          <a href="${p.modelFile}" download="${p.modelFileName}" class="btn ghost">
+            📥 Télécharger .${p.modelFileType}
           </a>
         `;
         extraContent = `<div id="viewer-container-${p.title.replace(/\s+/g, '-')}" class="blender-viewer-content"></div>`;
@@ -296,7 +337,14 @@ function appendStoredProjects(){
       div.innerHTML = `
         <h3>${escapeHtml(p.title)}</h3>
         <p>${escapeHtml(p.desc)}</p>
-        ${p.type === 'blender' ? '<p style="font-size:0.9rem;color:#7c4dff">🎮 Modèle 3D Interactif - Tournez, zoomez et déplacez avec la souris!</p>' : ''}
+        ${p.type === 'blender' ? `
+          <p style="font-size:0.9rem;color:#7c4dff">
+            🎮 Modèle 3D Interactif - Format: ${p.modelFileType.toUpperCase()}
+          </p>
+          <p style="font-size:0.8rem;color:var(--muted)">
+            Utilisez la souris pour tourner, zoomer et déplacer le modèle
+          </p>
+        ` : ''}
         ${p.type === 'media' ? '<p style="font-size:0.9rem;color:#00e5ff">🖼️ Projet avec Médias</p>' : ''}
         <div class="project-actions">
           ${buttonsHTML}
@@ -306,12 +354,12 @@ function appendStoredProjects(){
       
       container.appendChild(div);
       
-      // Initialiser les visualisations
+      // تهيئة العارض ثلاثي الأبعاد
       setTimeout(() => {
-        if (p.type === 'blender' && p.gltfFile) {
+        if (p.type === 'blender' && p.modelFile) {
           const viewerContainer = document.getElementById(`viewer-container-${p.title.replace(/\s+/g, '-')}`);
           if (viewerContainer) {
-            createInteractiveBlenderViewer(p.gltfFile, viewerContainer, p.isGLB);
+            createInteractiveBlenderViewer(p.modelFile, p.modelFileType, viewerContainer);
           }
         }
         else if (p.type === 'media') {
@@ -327,7 +375,7 @@ function appendStoredProjects(){
   }
 }
 
-// Nettoyage
+// التنظيف
 function cleanupViewers() {
   blenderViewers.forEach((viewer, id) => {
     if (viewer.renderer) {
@@ -337,7 +385,7 @@ function cleanupViewers() {
   blenderViewers.clear();
 }
 
-// Initialisation
+// التهيئة
 document.addEventListener('DOMContentLoaded', ()=>{
   appendStoredProjects();
   setupActions();
