@@ -29,7 +29,7 @@
         
         <!-- Section pour les fichiers -->
         <div style="margin:12px 0">
-          <h4 style="margin-bottom:8px">Fichiers du projet (optionnels)</h4>
+          <h4 style="margin-bottom:8px">Fichiers du projet (au moins un requis)</h4>
           
           <div style="margin-bottom:10px">
             <label style="display:block;margin-bottom:6px">Fichier Blender (.blend)</label>
@@ -89,11 +89,19 @@
         return; 
       }
 
-      const projectData = { title, desc, files: {} };
+      const projectData = { 
+        title, 
+        desc, 
+        files: {},
+        date: new Date().toISOString() // إضافة تاريخ لإدارة أفضل
+      };
+
+      let hasFiles = false;
 
       // Vérifier et traiter le fichier Blender (10000MB)
       const blendFile = document.getElementById('blendFile').files[0];
       if (blendFile) {
+        console.log('Fichier Blender détecté:', blendFile.name, blendFile.size);
         if (blendFile.size > 10000 * 1024 * 1024) {
           alert('Le fichier Blender est trop volumineux (max 10000MB) !');
           return;
@@ -104,13 +112,18 @@
         }
         projectData.files.blend = {
           url: URL.createObjectURL(blendFile),
-          name: blendFile.name
+          name: blendFile.name,
+          size: blendFile.size,
+          type: blendFile.type
         };
+        hasFiles = true;
+        console.log('Fichier Blender ajouté');
       }
 
       // Vérifier et traiter l'image (50MB)
       const imageFile = document.getElementById('imageFile').files[0];
       if (imageFile) {
+        console.log('Fichier image détecté:', imageFile.name, imageFile.size);
         if (imageFile.size > 50 * 1024 * 1024) {
           alert('L\'image est trop volumineuse (max 50MB) !');
           return;
@@ -122,13 +135,18 @@
         }
         projectData.files.image = {
           url: URL.createObjectURL(imageFile),
-          name: imageFile.name
+          name: imageFile.name,
+          size: imageFile.size,
+          type: imageFile.type
         };
+        hasFiles = true;
+        console.log('Fichier image ajouté');
       }
 
       // Vérifier et traiter la vidéo (900MB)
       const videoFile = document.getElementById('videoFile').files[0];
       if (videoFile) {
+        console.log('Fichier vidéo détecté:', videoFile.name, videoFile.size);
         if (videoFile.size > 900 * 1024 * 1024) {
           alert('La vidéo est trop volumineuse (max 900MB) !');
           return;
@@ -140,12 +158,16 @@
         }
         projectData.files.video = {
           url: URL.createObjectURL(videoFile),
-          name: videoFile.name
+          name: videoFile.name,
+          size: videoFile.size,
+          type: videoFile.type
         };
+        hasFiles = true;
+        console.log('Fichier vidéo ajouté');
       }
 
       // Vérifier qu'au moins un fichier a été ajouté
-      if (Object.keys(projectData.files).length === 0) {
+      if (!hasFiles) {
         alert('Veuillez ajouter au moins un fichier (Blender, image ou vidéo) !');
         return;
       }
@@ -153,14 +175,25 @@
       // Récupérer les projets existants
       let arr = [];
       try {
-        arr = JSON.parse(localStorage.getItem('projects')) || [];
+        const stored = localStorage.getItem('projects');
+        arr = stored ? JSON.parse(stored) : [];
+        console.log('Projets existants:', arr.length);
       } catch(e){
+        console.error('Erreur parsing projets existants:', e);
         arr = [];
       }
 
       // Ajouter le nouveau projet en tête (recent en premier)
       arr.unshift(projectData);
-      localStorage.setItem('projects', JSON.stringify(arr));
+      
+      try {
+        localStorage.setItem('projects', JSON.stringify(arr));
+        console.log('Projet sauvegardé avec succès');
+      } catch(e) {
+        console.error('Erreur sauvegarde:', e);
+        alert('Erreur lors de la sauvegarde du projet !');
+        return;
+      }
 
       // Réinitialiser champs
       document.getElementById('title').value = '';
@@ -170,15 +203,18 @@
       document.getElementById('videoFile').value = '';
 
       renderList();
-      alert('Projet ajouté ✅');
+      alert('Projet ajouté ✅\nFichiers: ' + Object.keys(projectData.files).join(', '));
     }
 
     function renderList(){
       const list = document.getElementById('currentList');
       let arr = [];
       try {
-        arr = JSON.parse(localStorage.getItem('projects')) || [];
+        const stored = localStorage.getItem('projects');
+        console.log('Données pour render:', stored);
+        arr = stored ? JSON.parse(stored) : [];
       } catch(e){
+        console.error('Erreur renderList:', e);
         arr = [];
       }
       
@@ -188,18 +224,19 @@
       }
       
       list.innerHTML = arr.map((p,idx)=>`
-        <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 6px;border-radius:8px;background:rgba(255,255,255,0.02);margin-bottom:8px">
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:12px;border-radius:8px;background:rgba(255,255,255,0.02);margin-bottom:10px;border:1px solid rgba(255,255,255,0.05)">
           <div style="flex:1">
-            <strong>${escapeHtml(p.title)}</strong>
-            <div class="muted" style="font-size:0.9rem">${escapeHtml(p.desc)}</div>
-            <div style="font-size:0.8rem;color:var(--muted);margin-top:4px">
-              ${p.files.blend ? '📁 Blender ' : ''}
-              ${p.files.image ? '🖼 Image ' : ''}
+            <strong style="color:var(--accent1);font-size:1.1rem">${escapeHtml(p.title)}</strong>
+            <div class="muted" style="font-size:0.9rem;margin:4px 0">${escapeHtml(p.desc)}</div>
+            <div style="font-size:0.8rem;color:var(--muted);margin-top:6px">
+              ${p.files.blend ? '📁 Blender • ' : ''}
+              ${p.files.image ? '🖼 Image • ' : ''}
               ${p.files.video ? '🎬 Vidéo' : ''}
             </div>
+            ${p.date ? `<div style="font-size:0.7rem;color:var(--muted);margin-top:4px">${new Date(p.date).toLocaleDateString('fr-FR')}</div>` : ''}
           </div>
           <div style="display:flex;gap:8px;margin-left:12px">
-            <button class="btn ghost" onclick="removeProject(${idx})">Suppr</button>
+            <button class="btn ghost" onclick="removeProject(${idx})" style="padding:6px 12px;font-size:0.8rem">Supprimer</button>
           </div>
         </div>
       `).join('');
@@ -290,20 +327,30 @@
       return s.replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); 
     }
 
-    // Réinitialiser le localStorage si nécessaire (pour debug)
-    function resetStorage(){
-      if(confirm('Voulez-vous réinitialiser tous les projets ?')) {
-        localStorage.removeItem('projects');
-        renderList();
-        alert('Stockage réinitialisé !');
+    // دالة لفحص البيانات
+    function debugStorage() {
+      const stored = localStorage.getItem('projects');
+      console.log('=== DEBUG STORAGE ===');
+      console.log('Raw data:', stored);
+      if (stored) {
+        try {
+          const parsed = JSON.parse(stored);
+          console.log('Parsed data:', parsed);
+          console.log('Number of projects:', parsed.length);
+          parsed.forEach((p, i) => {
+            console.log(`Project ${i}:`, p.title, p.files);
+          });
+        } catch(e) {
+          console.error('Parse error:', e);
+        }
       }
+      console.log('=====================');
     }
 
     // Afficher la liste au chargement si déjà connecté
     document.addEventListener('DOMContentLoaded', ()=> {
       console.log('Admin panel loaded');
-      // Pour debug: afficher le contenu actuel
-      console.log('Current projects:', localStorage.getItem('projects'));
+      debugStorage();
     });
   </script>
 </body>
