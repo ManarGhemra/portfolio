@@ -5,11 +5,9 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Admin — Portfolio</title>
   <link rel="stylesheet" href="css.css" />
-  <!-- إضافة مكتبات Three.js -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/DRACOLoader.js"></script>
 </head>
 <body>
   <div class="bg"><div class="blob b1"></div><div class="blob b2"></div></div>
@@ -40,7 +38,11 @@
           </label>
           <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
             <input type="radio" name="projectType" value="blender" onchange="toggleProjectType()">
-            Projet 3D Blender
+            Projet 3D Blender (Recommandé: GLB/GLTF)
+          </label>
+          <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
+            <input type="radio" name="projectType" value="simple3d" onchange="toggleProjectType()">
+            Modèle 3D Simple (Test Rapide)
           </label>
           <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
             <input type="radio" name="projectType" value="media" onchange="toggleProjectType()">
@@ -54,34 +56,43 @@
         <!-- Fichier Blender -->
         <div id="blenderInputContainer" style="display:none">
           <div style="margin:10px 0">
-            <strong>Fichier Blender (.blend) - pour téléchargement:</strong>
-            <input type="file" id="blendFile" accept=".blend" style="width:100%;padding:10px;margin:6px 0;border-radius:8px;background:transparent;border:1px solid rgba(255,255,255,0.04);color:inherit">
-            <p style="font-size:0.85rem;color:var(--muted);margin:4px 0">Fichier .blend original</p>
-          </div>
-          
-          <div style="margin:10px 0">
-            <strong>Fichier pour visualisation 3D (OBJ/GLTF/GLB):</strong>
-            <input type="file" id="modelFile" accept=".gltf,.glb,.obj,.mtl,.fbx" style="width:100%;padding:10px;margin:6px 0;border-radius:8px;background:transparent;border:1px solid rgba(255,255,255,0.04);color:inherit">
+            <strong>Fichier 3D (GLB/GLTF recommandé):</strong>
+            <input type="file" id="modelFile" accept=".gltf,.glb,.obj" style="width:100%;padding:10px;margin:6px 0;border-radius:8px;background:transparent;border:1px solid rgba(255,255,255,0.04);color:inherit">
             <p style="font-size:0.85rem;color:var(--muted);margin:4px 0">
-              Formats supportés: .gltf, .glb, .obj (+.mtl), .fbx<br>
-              <strong>Conseil:</strong> Exportez depuis Blender en GLB pour meilleure compatibilité
+              <strong>Formats supportés:</strong> .glb, .gltf, .obj<br>
+              <strong>Évitez .blend</strong> - Utilisez l'export GLTF depuis Blender
             </p>
           </div>
 
           <div style="margin:10px 0; padding:10px; background:rgba(124,77,255,0.1); border-radius:8px;">
-            <strong>📝 Comment exporter depuis Blender:</strong>
+            <strong>🚀 Export Rapide depuis Blender:</strong>
             <ol style="font-size:0.85rem; margin:8px 0; padding-left:20px;">
-              <li>Ouvrez votre fichier .blend dans Blender</li>
-              <li>File → Export → glTF 2.0 (.glb/.gltf)</li>
-              <li>Cochez "Selected Objects" si nécessaire</li>
-              <li>Format: .glb (recommandé)</li>
-              <li>Include: Scene, Materials, Textures</li>
-              <li>Cliquez "Export glTF 2.0"</li>
+              <li>File → Export → glTF 2.0</li>
+              <li>Choisir .glb (recommandé)</li>
+              <li>Export!</li>
             </ol>
+            <p style="font-size:0.8rem;color:var(--muted);margin:4px 0">
+              <strong>Alternative:</strong> Utilisez "Modèle 3D Simple" pour tester sans fichier
+            </p>
           </div>
         </div>
 
-        <!-- Médias (Images/Video) -->
+        <!-- Modèle 3D Simple -->
+        <div id="simple3dContainer" style="display:none">
+          <div style="margin:10px 0; padding:15px; background:rgba(0,229,255,0.1); border-radius:8px;">
+            <strong>🎯 Test Rapide - Modèles 3D Prédéfinis</strong>
+            <p style="font-size:0.85rem;margin:8px 0">Choisissez un modèle pour tester immédiatement:</p>
+            <select id="presetModel" style="width:100%;padding:8px;border-radius:6px;background:rgba(255,255,255,0.05);color:inherit;border:1px solid rgba(255,255,255,0.1);margin:5px 0">
+              <option value="cube">Cube Simple</option>
+              <option value="sphere">Sphère Texturée</option>
+              <option value="torus">Tore (Donut)</option>
+              <option value="monkey">Suzanne (Singe Blender)</option>
+            </select>
+            <p style="font-size:0.8rem;color:var(--muted);margin:4px 0">Aucun fichier nécessaire - chargement instantané</p>
+          </div>
+        </div>
+
+        <!-- Médias -->
         <div id="mediaInputContainer" style="display:none">
           <input type="file" id="imageFile" accept=".png,.jpg,.jpeg,.webp" style="width:100%;padding:10px;margin:6px 0;border-radius:8px;background:transparent;border:1px solid rgba(255,255,255,0.04);color:inherit">
           <p style="font-size:0.85rem;color:var(--muted);margin:4px 0">Image (PNG, JPG, WebP)</p>
@@ -122,15 +133,10 @@
 
     function toggleProjectType() {
       const projectType = document.querySelector('input[name="projectType"]:checked').value;
-      const linkInput = document.getElementById('link');
-      const blenderInputContainer = document.getElementById('blenderInputContainer');
-      const mediaInputContainer = document.getElementById('mediaInputContainer');
-      
-      linkInput.style.display = projectType === 'link' ? 'block' : 'none';
-      blenderInputContainer.style.display = projectType === 'blender' ? 'block' : 'none';
-      mediaInputContainer.style.display = projectType === 'media' ? 'block' : 'none';
-      
-      linkInput.required = projectType === 'link';
+      document.getElementById('link').style.display = projectType === 'link' ? 'block' : 'none';
+      document.getElementById('blenderInputContainer').style.display = projectType === 'blender' ? 'block' : 'none';
+      document.getElementById('simple3dContainer').style.display = projectType === 'simple3d' ? 'block' : 'none';
+      document.getElementById('mediaInputContainer').style.display = projectType === 'media' ? 'block' : 'none';
     }
 
     function addProject(){
@@ -148,39 +154,21 @@
       if (projectType === 'link') {
         const link = document.getElementById('link').value.trim();
         if(!link || !isValidUrl(link)){ 
-          alert('Ajoute un lien valide (https://...) pour ton projet !'); 
+          alert('Ajoute un lien valide !'); 
           return; 
         }
         projectData.link = link;
       } 
       else if (projectType === 'blender') {
-        const blendInput = document.getElementById('blendFile');
         const modelInput = document.getElementById('modelFile');
-        
-        if(!blendInput.files.length){ 
-          alert('Veuillez sélectionner un fichier Blender original !'); 
-          return; 
-        }
-        
         if(!modelInput.files.length){ 
-          alert('Veuillez sélectionner un fichier pour la visualisation 3D !'); 
+          alert('Veuillez sélectionner un fichier 3D !'); 
           return; 
         }
         
-        // Traitement fichier Blender
-        const blendFile = blendInput.files[0];
-        if (blendFile.size > 100 * 1024 * 1024) {
-          alert('Le fichier Blender est trop volumineux (max 100MB) !');
-          return;
-        }
-        const blendURL = URL.createObjectURL(blendFile);
-        projectData.blendFile = blendURL;
-        projectData.blendFileName = blendFile.name;
-        
-        // Traitement fichier modèle 3D
         const modelFile = modelInput.files[0];
-        if (modelFile.size > 50 * 1024 * 1024) {
-          alert('Le fichier modèle est trop volumineux (max 50MB) !');
+        if (modelFile.size > 20 * 1024 * 1024) {
+          alert('Fichier trop volumineux (max 20MB) !');
           return;
         }
         
@@ -189,31 +177,26 @@
         projectData.modelFileName = modelFile.name;
         projectData.modelFileType = modelFile.name.split('.').pop().toLowerCase();
       }
+      else if (projectType === 'simple3d') {
+        const preset = document.getElementById('presetModel').value;
+        projectData.presetModel = preset;
+        projectData.type = 'blender'; // Traiter comme blender pour l'affichage
+      }
       else if (projectType === 'media') {
         const imageInput = document.getElementById('imageFile');
-        const videoInput = document.getElementById('videoFile');
-        
         if(!imageInput.files.length){ 
-          alert('Veuillez sélectionner au moins une image !'); 
+          alert('Veuillez sélectionner une image !'); 
           return; 
         }
         
         const imageFile = imageInput.files[0];
-        if (imageFile.size > 10 * 1024 * 1024) {
-          alert('L\'image est trop volumineuse (max 10MB) !');
-          return;
-        }
-        
         const imageURL = URL.createObjectURL(imageFile);
         projectData.imageFile = imageURL;
         projectData.imageName = imageFile.name;
         
+        const videoInput = document.getElementById('videoFile');
         if(videoInput.files.length) {
           const videoFile = videoInput.files[0];
-          if (videoFile.size > 50 * 1024 * 1024) {
-            alert('La vidéo est trop volumineuse (max 50MB) !');
-            return;
-          }
           const videoURL = URL.createObjectURL(videoFile);
           projectData.videoFile = videoURL;
           projectData.videoName = videoFile.name;
@@ -235,7 +218,6 @@
       document.getElementById('title').value = '';
       document.getElementById('desc').value = '';
       document.getElementById('link').value = '';
-      document.getElementById('blendFile').value = '';
       document.getElementById('modelFile').value = '';
       document.getElementById('imageFile').value = '';
       document.getElementById('videoFile').value = '';
@@ -263,8 +245,7 @@
           <div style="flex:1">
             <strong>${escapeHtml(p.title)}</strong>
             <div class="muted" style="font-size:0.9rem">${escapeHtml(p.desc)}</div>
-            ${p.type === 'blender' ? '<div style="font-size:0.8rem;color:#7c4dff">🎮 Modèle 3D Interactif</div>' : ''}
-            ${p.type === 'media' ? '<div style="font-size:0.8rem;color:#00e5ff">🖼️ Médias (Image/Video)</div>' : ''}
+            ${p.type === 'blender' ? `<div style="font-size:0.8rem;color:#7c4dff">🎮 ${p.presetModel ? 'Modèle 3D Simple' : 'Modèle 3D Fichier'}</div>` : ''}
           </div>
           <div style="display:flex;gap:8px;margin-left:12px">
             <button class="btn ghost" onclick="removeAt(${idx})">Suppr</button>
@@ -280,14 +261,9 @@
       if(!confirm('Supprimer ce projet ?')) return;
       
       const project = arr[i];
-      if (project.type === 'blender') {
-        if (project.blendFile) URL.revokeObjectURL(project.blendFile);
-        if (project.modelFile) URL.revokeObjectURL(project.modelFile);
-      }
-      if (project.type === 'media') {
-        if (project.imageFile) URL.revokeObjectURL(project.imageFile);
-        if (project.videoFile) URL.revokeObjectURL(project.videoFile);
-      }
+      if (project.modelFile) URL.revokeObjectURL(project.modelFile);
+      if (project.imageFile) URL.revokeObjectURL(project.imageFile);
+      if (project.videoFile) URL.revokeObjectURL(project.videoFile);
       
       arr.splice(i,1);
       localStorage.setItem('projects', JSON.stringify(arr));
@@ -300,14 +276,9 @@
       let arr = [];
       try { arr = JSON.parse(localStorage.getItem('projects')) || []; } catch(e){ arr = []; }
       arr.forEach(project => {
-        if (project.type === 'blender') {
-          if (project.blendFile) URL.revokeObjectURL(project.blendFile);
-          if (project.modelFile) URL.revokeObjectURL(project.modelFile);
-        }
-        if (project.type === 'media') {
-          if (project.imageFile) URL.revokeObjectURL(project.imageFile);
-          if (project.videoFile) URL.revokeObjectURL(project.videoFile);
-        }
+        if (project.modelFile) URL.revokeObjectURL(project.modelFile);
+        if (project.imageFile) URL.revokeObjectURL(project.imageFile);
+        if (project.videoFile) URL.revokeObjectURL(project.videoFile);
       });
       
       localStorage.removeItem('projects');
