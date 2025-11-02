@@ -181,10 +181,12 @@
       } catch(e){
         arr = [];
       }
+      
       if(arr.length === 0){
         list.innerHTML = '<p class="muted">Aucun projet enregistré.</p>';
         return;
       }
+      
       list.innerHTML = arr.map((p,idx)=>`
         <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 6px;border-radius:8px;background:rgba(255,255,255,0.02);margin-bottom:8px">
           <div style="flex:1">
@@ -197,53 +199,78 @@
             </div>
           </div>
           <div style="display:flex;gap:8px;margin-left:12px">
-            <button class="btn ghost" onclick="removeAt(${idx})">Suppr</button>
+            <button class="btn ghost" onclick="removeProject(${idx})">Suppr</button>
           </div>
         </div>
       `).join('');
     }
 
-    function removeAt(index){
+    function removeProject(index){
+      console.log('Tentative de suppression du projet à l\'index:', index);
+      
       let arr = [];
-      try { 
-        arr = JSON.parse(localStorage.getItem('projects')) || []; 
-      } catch(e){ 
-        arr = []; 
+      try {
+        const storedData = localStorage.getItem('projects');
+        console.log('Données stockées:', storedData);
+        arr = storedData ? JSON.parse(storedData) : [];
+      } catch(e) {
+        console.error('Erreur parsing JSON:', e);
+        arr = [];
       }
       
-      if(!arr[index]) return;
+      console.log('Tableau des projets:', arr);
       
-      if(!confirm('Supprimer ce projet ?')) return;
-      
-      // تحرير روابط الملفات
-      const project = arr[index];
-      if (project.files) {
-        if (project.files.blend) URL.revokeObjectURL(project.files.blend.url);
-        if (project.files.image) URL.revokeObjectURL(project.files.image.url);
-        if (project.files.video) URL.revokeObjectURL(project.files.video.url);
+      if(index < 0 || index >= arr.length){
+        alert('Erreur: Projet non trouvé !');
+        return;
       }
       
-      // إزالة المشروع من المصفوفة
+      const projectToDelete = arr[index];
+      console.log('Projet à supprimer:', projectToDelete);
+      
+      if(!confirm('Supprimer le projet "' + projectToDelete.title + '" ?')) {
+        return;
+      }
+      
+      // Libérer les URLs des fichiers
+      if (projectToDelete.files) {
+        if (projectToDelete.files.blend) {
+          URL.revokeObjectURL(projectToDelete.files.blend.url);
+          console.log('URL Blender libérée');
+        }
+        if (projectToDelete.files.image) {
+          URL.revokeObjectURL(projectToDelete.files.image.url);
+          console.log('URL Image libérée');
+        }
+        if (projectToDelete.files.video) {
+          URL.revokeObjectURL(projectToDelete.files.video.url);
+          console.log('URL Vidéo libérée');
+        }
+      }
+      
+      // Supprimer le projet du tableau
       arr.splice(index, 1);
       
-      // حفظ المصفوفة المحدثة
+      // Sauvegarder le tableau mis à jour
       localStorage.setItem('projects', JSON.stringify(arr));
+      console.log('Projet supprimé. Nouveau tableau:', arr);
       
-      // إعادة عرض القائمة
+      // Re-rendre la liste
       renderList();
+      alert('Projet supprimé avec succès !');
     }
 
     function clearAll(){
-      if(!confirm('Supprimer tous les projets ?')) return;
+      if(!confirm('Supprimer TOUS les projets ? Cette action est irréversible !')) return;
       
-      // تحرير جميع روابط الملفات
       let arr = [];
-      try { 
-        arr = JSON.parse(localStorage.getItem('projects')) || []; 
-      } catch(e){ 
-        arr = []; 
+      try {
+        arr = JSON.parse(localStorage.getItem('projects')) || [];
+      } catch(e){
+        arr = [];
       }
       
+      // Libérer toutes les URLs des fichiers
       arr.forEach(project => {
         if (project.files) {
           if (project.files.blend) URL.revokeObjectURL(project.files.blend.url);
@@ -254,7 +281,7 @@
       
       localStorage.removeItem('projects');
       renderList();
-      alert('Tous les projets supprimés.');
+      alert('Tous les projets ont été supprimés.');
     }
 
     // utilitaires
@@ -263,9 +290,20 @@
       return s.replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); 
     }
 
+    // Réinitialiser le localStorage si nécessaire (pour debug)
+    function resetStorage(){
+      if(confirm('Voulez-vous réinitialiser tous les projets ?')) {
+        localStorage.removeItem('projects');
+        renderList();
+        alert('Stockage réinitialisé !');
+      }
+    }
+
     // Afficher la liste au chargement si déjà connecté
     document.addEventListener('DOMContentLoaded', ()=> {
-      // يمكن إضافة تهيئة إضافية هنا إذا لزم الأمر
+      console.log('Admin panel loaded');
+      // Pour debug: afficher le contenu actuel
+      console.log('Current projects:', localStorage.getItem('projects'));
     });
   </script>
 </body>
