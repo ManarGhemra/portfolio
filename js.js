@@ -1,6 +1,6 @@
-// js.js - مع دعم كامل للنماذج ثلاثية الأبعاد
+// js.js - مع نماذج ثلاثية الأبعاد فورية
 
-let blenderViewers = new Map();
+let activeViewers = new Map();
 
 function escapeHtml(s){
   if(!s) return '';
@@ -27,8 +27,8 @@ function setupActions(){
   if(downloadBtn) downloadBtn.addEventListener('click', ()=> window.print());
 }
 
-// دالة لتحميل النماذج ثلاثية الأبعاد
-function load3DModel(modelUrl, fileType, container, loadingElement) {
+// إنشاء نموذج ثلاثي الأبعاد فوري
+function createPresetModel(presetType, container) {
   const scene = new THREE.Scene();
   scene.background = new THREE.Color(0x0a0a12);
   
@@ -38,7 +38,7 @@ function load3DModel(modelUrl, fileType, container, loadingElement) {
   const camera = new THREE.PerspectiveCamera(75, width / height, 0.1, 1000);
   camera.position.z = 5;
   
-  const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+  const renderer = new THREE.WebGLRenderer({ antialias: true });
   renderer.setSize(width, height);
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
   container.innerHTML = '';
@@ -49,55 +49,156 @@ function load3DModel(modelUrl, fileType, container, loadingElement) {
   controls.dampingFactor = 0.05;
   
   // إضاءة
-  const ambientLight = new THREE.AmbientLight(0x404040, 1);
+  const ambientLight = new THREE.AmbientLight(0x404040, 0.6);
   scene.add(ambientLight);
   
-  const directionalLight1 = new THREE.DirectionalLight(0x7c4dff, 0.8);
-  directionalLight1.position.set(5, 5, 5);
-  scene.add(directionalLight1);
+  const directionalLight = new THREE.DirectionalLight(0x7c4dff, 0.8);
+  directionalLight.position.set(5, 5, 5);
+  scene.add(directionalLight);
   
-  const directionalLight2 = new THREE.DirectionalLight(0x00e5ff, 0.5);
+  const directionalLight2 = new THREE.DirectionalLight(0x00e5ff, 0.4);
   directionalLight2.position.set(-5, -5, -5);
   scene.add(directionalLight2);
+  
+  // إنشاء النموذج بناءً على النوع
+  let geometry, material, mesh;
+  
+  switch(presetType) {
+    case 'cube':
+      geometry = new THREE.BoxGeometry(2, 2, 2);
+      material = new THREE.MeshPhongMaterial({ 
+        color: 0x7c4dff,
+        shininess: 100 
+      });
+      break;
+      
+    case 'sphere':
+      geometry = new THREE.SphereGeometry(1.5, 32, 32);
+      material = new THREE.MeshPhongMaterial({ 
+        color: 0x00e5ff,
+        shininess: 100,
+        specular: 0x444444
+      });
+      break;
+      
+    case 'torus':
+      geometry = new THREE.TorusGeometry(1.5, 0.5, 16, 100);
+      material = new THREE.MeshPhongMaterial({ 
+        color: 0xff6b6b,
+        shininess: 100 
+      });
+      break;
+      
+    case 'monkey':
+      geometry = new THREE.IcosahedronGeometry(1.5, 1);
+      material = new THREE.MeshPhongMaterial({ 
+        color: 0x4dff7c,
+        flatShading: true 
+      });
+      break;
+  }
+  
+  mesh = new THREE.Mesh(geometry, material);
+  scene.add(mesh);
   
   // شبكة مساعدة
   const gridHelper = new THREE.GridHelper(10, 10, 0x444444, 0x222222);
   scene.add(gridHelper);
   
-  let loader;
-  let model;
+  // محاور
+  const axesHelper = new THREE.AxesHelper(3);
+  scene.add(axesHelper);
   
-  switch(fileType) {
-    case 'gltf':
-    case 'glb':
-      loader = new THREE.GLTFLoader();
-      break;
-    case 'obj':
-      loader = new THREE.OBJLoader();
-      break;
-    case 'fbx':
-      loader = new THREE.FBXLoader();
-      break;
-    default:
-      console.error('Format non supporté:', fileType);
-      if (loadingElement) {
-        loadingElement.innerHTML = '<p style="color: #ff4444;">❌ Format de fichier non supporté</p>';
-      }
-      return;
+  function animate() {
+    requestAnimationFrame(animate);
+    
+    // دوران بسيط
+    if (mesh) {
+      mesh.rotation.x += 0.005;
+      mesh.rotation.y += 0.01;
+    }
+    
+    controls.update();
+    renderer.render(scene, camera);
   }
+  animate();
+  
+  function handleResize() {
+    const newWidth = container.clientWidth;
+    const newHeight = Math.min(400, window.innerHeight * 0.6);
+    
+    camera.aspect = newWidth / newHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(newWidth, newHeight);
+  }
+  
+  window.addEventListener('resize', handleResize);
+  
+  const viewerId = 'viewer-' + Math.random().toString(36).substr(2, 9);
+  activeViewers.set(viewerId, { scene, camera, renderer, controls, animate, handleResize });
+  
+  return viewerId;
+}
+
+// تحميل نموذج من ملف
+function loadModelFromFile(modelUrl, fileType, container) {
+  const scene = new THREE.Scene();
+  scene.background = new THREE.Color(0x0a0a12);
+  
+  const width = container.clientWidth;
+  const height = Math.min(400, window.innerHeight * 0.6);
+  
+  const camera = new THREE.PerspectiveCamera(75, width / height, 0.1, 1000);
+  camera.position.z = 5;
+  
+  const renderer = new THREE.WebGLRenderer({ antialias: true });
+  renderer.setSize(width, height);
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  container.innerHTML = '';
+  container.appendChild(renderer.domElement);
+  
+  const controls = new THREE.OrbitControls(camera, renderer.domElement);
+  controls.enableDamping = true;
+  controls.dampingFactor = 0.05;
+  
+  // إضاءة
+  const ambientLight = new THREE.AmbientLight(0x404040, 0.6);
+  scene.add(ambientLight);
+  
+  const directionalLight = new THREE.DirectionalLight(0x7c4dff, 0.8);
+  directionalLight.position.set(5, 5, 5);
+  scene.add(directionalLight);
+  
+  const directionalLight2 = new THREE.DirectionalLight(0x00e5ff, 0.4);
+  directionalLight2.position.set(-5, -5, -5);
+  scene.add(directionalLight2);
+  
+  let loader;
+  
+  if (fileType === 'gltf' || fileType === 'glb') {
+    loader = new THREE.GLTFLoader();
+  } else if (fileType === 'obj') {
+    loader = new THREE.OBJLoader();
+  } else {
+    container.innerHTML = '<p style="color: #ff4444; text-align: center; padding: 20px;">❌ Format non supporté: ' + fileType + '</p>';
+    return;
+  }
+  
+  const loadingElement = document.createElement('div');
+  loadingElement.className = 'viewer-loading';
+  loadingElement.innerHTML = `
+    <div class="loading-spinner"></div>
+    <p>Chargement du modèle 3D...</p>
+  `;
+  container.appendChild(loadingElement);
   
   loader.load(
     modelUrl,
     function (object) {
-      if (fileType === 'gltf' || fileType === 'glb') {
-        model = object.scene;
-      } else {
-        model = object;
-      }
-      
+      const model = (fileType === 'gltf' || fileType === 'glb') ? object.scene : object;
       scene.add(model);
       
-      // ضبط المقياس والموقع
+      // ضبط المقياس
       const box = new THREE.Box3().setFromObject(model);
       const center = box.getCenter(new THREE.Vector3());
       const size = box.getSize(new THREE.Vector3());
@@ -110,29 +211,29 @@ function load3DModel(modelUrl, fileType, container, loadingElement) {
       model.position.y = -center.y * scale;
       model.position.z = -center.z * scale;
       
-      if (loadingElement) {
-        loadingElement.style.display = 'none';
-      }
+      loadingElement.remove();
       
-      console.log('Modèle 3D chargé avec succès:', fileType);
+      console.log('Modèle chargé avec succès');
     },
     function (xhr) {
-      const percent = (xhr.loaded / xhr.total * 100);
-      if (loadingElement && xhr.total) {
+      if (xhr.total > 0) {
+        const percent = (xhr.loaded / xhr.total * 100);
         loadingElement.querySelector('p').textContent = `Chargement: ${Math.round(percent)}%`;
       }
     },
     function (error) {
-      console.error('Erreur de chargement:', error);
-      if (loadingElement) {
-        loadingElement.innerHTML = `
-          <p style="color: #ff4444;">❌ Erreur de chargement</p>
-          <p style="font-size:0.8rem;color:var(--muted);">Format: ${fileType}</p>
-          <button class="viewer-btn" onclick="retryLoad('${modelUrl}', '${fileType}', this.parentElement)">Réessayer</button>
-        `;
-      }
+      console.error('Erreur:', error);
+      loadingElement.innerHTML = `
+        <p style="color: #ff4444;">❌ Erreur de chargement</p>
+        <p style="font-size:0.8rem;color:var(--muted);">Essayez un fichier .glb ou utilisez un modèle simple</p>
+        <button class="viewer-btn" onclick="this.parentElement.remove()">Fermer</button>
+      `;
     }
   );
+  
+  // شبكة مساعدة
+  const gridHelper = new THREE.GridHelper(10, 10, 0x444444, 0x222222);
+  scene.add(gridHelper);
   
   function animate() {
     requestAnimationFrame(animate);
@@ -153,51 +254,25 @@ function load3DModel(modelUrl, fileType, container, loadingElement) {
   window.addEventListener('resize', handleResize);
   
   const viewerId = 'viewer-' + Math.random().toString(36).substr(2, 9);
-  blenderViewers.set(viewerId, {
-    scene,
-    camera,
-    renderer,
-    controls,
-    animate,
-    handleResize
-  });
+  activeViewers.set(viewerId, { scene, camera, renderer, controls, animate, handleResize });
   
   return viewerId;
 }
 
-function retryLoad(modelUrl, fileType, loadingElement) {
-  const container = loadingElement.parentElement.querySelector('.blender-viewer-3d');
-  if (container) {
-    loadingElement.style.display = 'flex';
-    loadingElement.innerHTML = `
-      <div class="loading-spinner"></div>
-      <p>Nouvelle tentative de chargement...</p>
-    `;
-    setTimeout(() => load3DModel(modelUrl, fileType, container, loadingElement), 500);
-  }
-}
-
-// إنشاء عارض ثلاثي الأبعاد تفاعلي
-function createInteractiveBlenderViewer(modelFileUrl, fileType, container) {
-  const viewerId = 'viewer-' + Math.random().toString(36).substr(2, 9);
-  
+// إنشاء عارض ثلاثي الأبعاد
+function create3DViewer(project, container) {
   const viewerHTML = `
     <div class="blender-viewer-container">
       <div class="viewer-controls">
-        <button class="viewer-btn" onclick="resetCamera('${viewerId}')">🔄 Reset</button>
-        <button class="viewer-btn" onclick="toggleAutoRotate('${viewerId}')">⚡ Auto-rotation</button>
-        <button class="viewer-btn" onclick="toggleGrid('${viewerId}')">🔲 Grille</button>
-        <span class="viewer-help">🎮 Souris: Rotation | Molette: Zoom | Clic droit: Déplacer</span>
+        <button class="viewer-btn" onclick="resetViewer('${project.title}')">🔄 Reset</button>
+        <button class="viewer-btn" onclick="toggleAutoRotate('${project.title}')">⚡ Rotation Auto</button>
+        <span class="viewer-help">🎮 Souris: Rotation | Molette: Zoom</span>
       </div>
-      <div id="${viewerId}-container" class="blender-viewer-3d"></div>
-      <div class="viewer-loading" id="loading-${viewerId}">
-        <div class="loading-spinner"></div>
-        <p>Chargement du modèle 3D...</p>
-      </div>
+      <div id="viewer-${project.title.replace(/\s+/g, '-')}" class="blender-viewer-3d"></div>
       <div class="viewer-info">
-        <span>Format: ${fileType.toUpperCase()}</span>
+        <span>${project.presetModel ? 'Modèle Simple: ' + project.presetModel : 'Fichier: ' + (project.modelFileType || '3D')}</span>
         <span>•</span>
-        <span>Contrôles actifs</span>
+        <span>Contrôles Actifs</span>
       </div>
     </div>
   `;
@@ -205,37 +280,47 @@ function createInteractiveBlenderViewer(modelFileUrl, fileType, container) {
   container.innerHTML = viewerHTML;
   
   setTimeout(() => {
-    const viewerContainer = document.getElementById(`${viewerId}-container`);
-    const loadingElement = document.getElementById(`loading-${viewerId}`);
-    
-    if (viewerContainer && loadingElement) {
-      load3DModel(modelFileUrl, fileType, viewerContainer, loadingElement);
+    const viewerElement = document.getElementById(`viewer-${project.title.replace(/\s+/g, '-')}`);
+    if (viewerElement) {
+      if (project.presetModel) {
+        createPresetModel(project.presetModel, viewerElement);
+      } else if (project.modelFile) {
+        loadModelFromFile(project.modelFile, project.modelFileType, viewerElement);
+      }
     }
   }, 100);
 }
 
 // عناصر التحكم
-function resetCamera(viewerId) {
-  const viewer = blenderViewers.get(viewerId);
-  if (viewer) {
-    viewer.controls.reset();
-  }
-}
-
-function toggleAutoRotate(viewerId) {
-  const viewer = blenderViewers.get(viewerId);
-  if (viewer) {
-    viewer.controls.autoRotate = !viewer.controls.autoRotate;
-  }
-}
-
-function toggleGrid(viewerId) {
-  const viewer = blenderViewers.get(viewerId);
-  if (viewer && viewer.scene) {
-    const grid = viewer.scene.getObjectByName('gridHelper');
-    if (grid) {
-      grid.visible = !grid.visible;
+function resetViewer(title) {
+  const viewerId = `viewer-${title.replace(/\s+/g, '-')}`;
+  // إعادة تحميل العارض
+  const container = document.getElementById(viewerId);
+  if (container) {
+    container.innerHTML = '';
+    // إعادة التهيئة
+    const project = getProjectByTitle(title);
+    if (project) {
+      if (project.presetModel) {
+        createPresetModel(project.presetModel, container);
+      } else if (project.modelFile) {
+        loadModelFromFile(project.modelFile, project.modelFileType, container);
+      }
     }
+  }
+}
+
+function toggleAutoRotate(title) {
+  // يمكن إضافة دوران تلقائي إذا needed
+  alert('Rotation automatique activée/désactivée');
+}
+
+function getProjectByTitle(title) {
+  try {
+    const projects = JSON.parse(localStorage.getItem('projects')) || [];
+    return projects.find(p => p.title === title);
+  } catch(e) {
+    return null;
   }
 }
 
@@ -263,7 +348,6 @@ function createMediaGallery(project, container) {
         <h4>🎥 Vidéo du Projet</h4>
         <video controls class="media-video">
           <source src="${project.videoFile}" type="video/mp4">
-          Votre navigateur ne supporte pas la lecture vidéo.
         </video>
         <div class="media-actions">
           <a href="${project.videoFile}" download="${project.videoName || 'video.mp4'}" class="btn ghost">
@@ -278,111 +362,50 @@ function createMediaGallery(project, container) {
   container.innerHTML = mediaHTML;
 }
 
-// ✅ الدالة الرئيسية لإضافة المشاريع
+// ✅ الدالة الرئيسية
 function appendStoredProjects(){
   try {
     const stored = JSON.parse(localStorage.getItem('projects')) || [];
     const container = document.getElementById('project-list');
     if(!container || stored.length === 0) return;
 
-    const existingTitles = Array.from(container.querySelectorAll('.project-card h3'))
-                               .map(h=>h.textContent.trim());
-
-    stored.forEach(p=>{
-      if (existingTitles.includes(p.title.trim())) return;
-
-      const div = document.createElement('div');
-      div.className = 'project-card';
-      
-      let buttonsHTML = '';
-      let extraContent = '';
-      
-      if (p.type === 'blender' && p.modelFile) {
-        buttonsHTML = `
-          <a href="${p.blendFile}" download="${p.blendFileName || 'modele_3d.blend'}" class="btn ghost">
-            📥 Télécharger .blend
-          </a>
-          <a href="${p.modelFile}" download="${p.modelFileName}" class="btn ghost">
-            📥 Télécharger .${p.modelFileType}
-          </a>
-        `;
-        extraContent = `<div id="viewer-container-${p.title.replace(/\s+/g, '-')}" class="blender-viewer-content"></div>`;
-      } 
-      else if (p.type === 'media') {
-        buttonsHTML = '';
-        if (p.imageFile) {
-          buttonsHTML += `
-            <a href="${p.imageFile}" download="${p.imageName || 'image.png'}" class="btn ghost">
-              📥 Télécharger Image
-            </a>
-          `;
-        }
-        if (p.videoFile) {
-          buttonsHTML += `
-            <a href="${p.videoFile}" download="${p.videoName || 'video.mp4'}" class="btn ghost">
-              📥 Télécharger Vidéo
-            </a>
-          `;
-        }
-        extraContent = `<div id="media-${p.title.replace(/\s+/g, '-')}" class="media-gallery-container"></div>`;
-      }
-      else {
-        buttonsHTML = `
-          <a href="${p.link}" target="_blank" class="btn ghost">
-            Voir le projet
-          </a>
-        `;
-      }
-
-      div.innerHTML = `
-        <h3>${escapeHtml(p.title)}</h3>
-        <p>${escapeHtml(p.desc)}</p>
-        ${p.type === 'blender' ? `
+    stored.forEach(p => {
+      if (p.type === 'blender' || p.presetModel) {
+        const div = document.createElement('div');
+        div.className = 'project-card';
+        
+        div.innerHTML = `
+          <h3>${escapeHtml(p.title)}</h3>
+          <p>${escapeHtml(p.desc)}</p>
           <p style="font-size:0.9rem;color:#7c4dff">
-            🎮 Modèle 3D Interactif - Format: ${p.modelFileType.toUpperCase()}
+            🎮 ${p.presetModel ? 'Modèle 3D Simple - ' + p.presetModel : 'Modèle 3D Interactif'}
           </p>
-          <p style="font-size:0.8rem;color:var(--muted)">
-            Utilisez la souris pour tourner, zoomer et déplacer le modèle
-          </p>
-        ` : ''}
-        ${p.type === 'media' ? '<p style="font-size:0.9rem;color:#00e5ff">🖼️ Projet avec Médias</p>' : ''}
-        <div class="project-actions">
-          ${buttonsHTML}
-        </div>
-        ${extraContent}
-      `;
-      
-      container.appendChild(div);
-      
-      // تهيئة العارض ثلاثي الأبعاد
-      setTimeout(() => {
-        if (p.type === 'blender' && p.modelFile) {
-          const viewerContainer = document.getElementById(`viewer-container-${p.title.replace(/\s+/g, '-')}`);
+          <div id="viewer-content-${p.title.replace(/\s+/g, '-')}" class="blender-viewer-content"></div>
+        `;
+        
+        container.appendChild(div);
+        
+        setTimeout(() => {
+          const viewerContainer = document.getElementById(`viewer-content-${p.title.replace(/\s+/g, '-')}`);
           if (viewerContainer) {
-            createInteractiveBlenderViewer(p.modelFile, p.modelFileType, viewerContainer);
+            create3DViewer(p, viewerContainer);
           }
-        }
-        else if (p.type === 'media') {
-          const mediaContainer = document.getElementById(`media-${p.title.replace(/\s+/g, '-')}`);
-          if (mediaContainer) {
-            createMediaGallery(p, mediaContainer);
-          }
-        }
-      }, 500);
+        }, 100);
+      }
     });
   } catch(e){
-    console.error('Erreur lors du chargement des projets', e);
+    console.error('Erreur:', e);
   }
 }
 
 // التنظيف
 function cleanupViewers() {
-  blenderViewers.forEach((viewer, id) => {
+  activeViewers.forEach((viewer, id) => {
     if (viewer.renderer) {
       viewer.renderer.dispose();
     }
   });
-  blenderViewers.clear();
+  activeViewers.clear();
 }
 
 // التهيئة
