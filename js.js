@@ -31,7 +31,12 @@ function appendStoredProjects(){
     const storedData = localStorage.getItem('projects');
     console.log('Données récupérées du localStorage:', storedData);
     
-    const stored = storedData ? JSON.parse(storedData) : [];
+    if (!storedData) {
+      console.log('Aucune donnée dans localStorage');
+      return;
+    }
+    
+    const stored = JSON.parse(storedData);
     const container = document.getElementById('project-list');
     
     if(!container) {
@@ -44,13 +49,13 @@ function appendStoredProjects(){
       return;
     }
 
-    console.log('Projets à afficher:', stored);
+    console.log('Projets à afficher:', stored.length, 'projets');
 
     // نتأكد أننا لا نضيف المشاريع مرتين
     const existingTitles = Array.from(container.querySelectorAll('.project-card h3'))
                                .map(h=>h.textContent.trim());
 
-    stored.forEach(p=>{
+    stored.forEach((p, index)=>{
       if (existingTitles.includes(p.title.trim())) {
         console.log('Projet déjà affiché:', p.title);
         return; // ✅ لا نكرر نفس المشروع
@@ -63,6 +68,7 @@ function appendStoredProjects(){
       let buttonsHtml = '';
       
       if (p.files && p.files.blend) {
+        console.log('Ajout bouton Blender pour:', p.title);
         buttonsHtml += `
           <a href="${p.files.blend.url}" 
              download="${p.files.blend.name}" 
@@ -73,6 +79,7 @@ function appendStoredProjects(){
       }
       
       if (p.files && p.files.image) {
+        console.log('Ajout bouton Image pour:', p.title);
         buttonsHtml += `
           <a href="${p.files.image.url}" 
              download="${p.files.image.name}" 
@@ -83,6 +90,7 @@ function appendStoredProjects(){
       }
       
       if (p.files && p.files.video) {
+        console.log('Ajout bouton Vidéo pour:', p.title);
         buttonsHtml += `
           <a href="${p.files.video.url}" 
              download="${p.files.video.name}" 
@@ -94,18 +102,18 @@ function appendStoredProjects(){
       
       // إذا لم يكن هناك ملفات، نعرض رسالة
       if (!buttonsHtml) {
-        buttonsHtml = '<p class="muted">Aucun fichier disponible</p>';
+        buttonsHtml = '<p class="muted" style="font-size:0.9rem">Aucun fichier disponible</p>';
       }
       
       div.innerHTML = `
-        <h3>${escapeHtml(p.title)}</h3>
-        <p>${escapeHtml(p.desc)}</p>
+        <h3 style="color:var(--accent1);margin-bottom:8px">${escapeHtml(p.title)}</h3>
+        <p style="margin-bottom:12px;color:var(--muted)">${escapeHtml(p.desc)}</p>
         <div style="margin-top:12px">
           ${buttonsHtml}
         </div>
       `;
       container.appendChild(div);
-      console.log('Projet ajouté:', p.title);
+      console.log('Projet ajouté avec succès:', p.title);
     });
   } catch(e){
     console.error('Erreur lors du chargement des projets depuis localStorage', e);
@@ -117,7 +125,7 @@ function fixStorageIssues() {
   try {
     const stored = localStorage.getItem('projects');
     if (!stored) {
-      console.log('Aucune donnée dans localStorage');
+      console.log('Aucune donnée dans localStorage - initialisation');
       localStorage.setItem('projects', JSON.stringify([]));
       return;
     }
@@ -126,6 +134,8 @@ function fixStorageIssues() {
     if (!Array.isArray(parsed)) {
       console.log('Les données ne sont pas un tableau, correction...');
       localStorage.setItem('projects', JSON.stringify([]));
+    } else {
+      console.log('Données valides:', parsed.length, 'projets');
     }
   } catch (e) {
     console.error('Erreur dans les données, réinitialisation...', e);
@@ -133,11 +143,34 @@ function fixStorageIssues() {
   }
 }
 
+// دالة لفحص حالة التخزين
+function checkStorage() {
+  console.log('=== CHECK STORAGE ===');
+  const stored = localStorage.getItem('projects');
+  console.log('Storage key exists:', !!stored);
+  if (stored) {
+    try {
+      const parsed = JSON.parse(stored);
+      console.log('Number of projects:', parsed.length);
+      parsed.forEach((p, i) => {
+        console.log(`Project ${i}:`, p.title);
+        console.log('  Files:', p.files ? Object.keys(p.files) : 'none');
+      });
+    } catch(e) {
+      console.error('Parse error:', e);
+    }
+  }
+  console.log('=====================');
+}
+
 document.addEventListener('DOMContentLoaded', ()=>{
   console.log('Page index chargée');
   
   // تصحيح أي مشاكل في التخزين
   fixStorageIssues();
+  
+  // فحص التخزين
+  checkStorage();
   
   // إضافة المشاريع المخزنة
   appendStoredProjects();
@@ -148,7 +181,4 @@ document.addEventListener('DOMContentLoaded', ()=>{
   // إعداد التمرير
   revealOnScroll();
   window.addEventListener('scroll', revealOnScroll);
-  
-  // للتصحيح: عرض البيانات الحالية
-  console.log('Contenu final du localStorage:', localStorage.getItem('projects'));
 });
