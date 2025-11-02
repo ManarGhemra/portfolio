@@ -203,31 +203,47 @@
       `).join('');
     }
 
-    function removeAt(i){
+    function removeAt(index){
       let arr = [];
-      try { arr = JSON.parse(localStorage.getItem('projects')) || []; } catch(e){ arr = []; }
-      if(!arr[i]) return;
+      try { 
+        arr = JSON.parse(localStorage.getItem('projects')) || []; 
+      } catch(e){ 
+        arr = []; 
+      }
+      
+      if(!arr[index]) return;
+      
       if(!confirm('Supprimer ce projet ?')) return;
       
-      // Libérer les URLs des fichiers
-      const project = arr[i];
+      // تحرير روابط الملفات
+      const project = arr[index];
       if (project.files) {
         if (project.files.blend) URL.revokeObjectURL(project.files.blend.url);
         if (project.files.image) URL.revokeObjectURL(project.files.image.url);
         if (project.files.video) URL.revokeObjectURL(project.files.video.url);
       }
       
-      arr.splice(i,1);
+      // إزالة المشروع من المصفوفة
+      arr.splice(index, 1);
+      
+      // حفظ المصفوفة المحدثة
       localStorage.setItem('projects', JSON.stringify(arr));
+      
+      // إعادة عرض القائمة
       renderList();
     }
 
     function clearAll(){
       if(!confirm('Supprimer tous les projets ?')) return;
       
-      // Libérer toutes les URLs des fichiers
+      // تحرير جميع روابط الملفات
       let arr = [];
-      try { arr = JSON.parse(localStorage.getItem('projects')) || []; } catch(e){ arr = []; }
+      try { 
+        arr = JSON.parse(localStorage.getItem('projects')) || []; 
+      } catch(e){ 
+        arr = []; 
+      }
+      
       arr.forEach(project => {
         if (project.files) {
           if (project.files.blend) URL.revokeObjectURL(project.files.blend.url);
@@ -249,7 +265,7 @@
 
     // Afficher la liste au chargement si déjà connecté
     document.addEventListener('DOMContentLoaded', ()=> {
-      // Initialisation si nécessaire
+      // يمكن إضافة تهيئة إضافية هنا إذا لزم الأمر
     });
   </script>
 </body>
