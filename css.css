@@ -213,3 +213,63 @@ size: A4;
 margin: 1.2cm;
 }
 }
+/* Styles pour les visualiseurs 3D et médias */
+.blender-viewer {
+  background: linear-gradient(180deg, rgba(0,0,0,0.3), rgba(255,255,255,0.01));
+  border: 1px solid rgba(124,77,255,0.1);
+  border-radius: 12px;
+  padding: 20px;
+  margin: 15px 0;
+}
+
+.media-gallery {
+  margin: 15px 0;
+}
+
+.media-gallery img,
+.media-gallery video {
+  max-width: 100%;
+  border-radius: 8px;
+  border: 1px solid rgba(255,255,255,0.1);
+  transition: transform 0.3s ease;
+}
+
+.media-gallery img:hover {
+  transform: scale(1.02);
+}
+
+/* Amélioration des cartes de projet */
+.project-card {
+  background: linear-gradient(180deg, rgba(0,0,0,0.2), rgba(255,255,255,0.02));
+  border-radius: 12px;
+  padding: 20px;
+  border: 1px solid rgba(124,77,255,0.06);
+  transition: transform 0.18s, box-shadow 0.18s;
+  margin-bottom: 20px;
+}
+
+.project-card:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 18px 40px rgba(0,0,0,0.6);
+}
+
+/* Boutons améliorés */
+.project-card .btn {
+  margin: 5px;
+  flex: 1;
+  min-width: 120px;
+  text-align: center;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .project-card .btn {
+    flex: 100%;
+    margin: 5px 0;
+  }
+  
+  .blender-viewer,
+  .media-gallery {
+    padding: 15px;
+  }
+}
