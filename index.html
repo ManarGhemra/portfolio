@@ -61,17 +61,17 @@
     <section class="card reveal" id="projects-section">
       <h2 class="section-title">Projets récents</h2>
       <div id="project-list" class="projects-grid">
-        <!-- Projet TP 1 avec téléchargement direct -->
+        <!-- Projet TP 1 -->
         <div class="project-card">
           <h3>TP 1 - Modélisation 3D</h3>
           <p>Projet de conception et modélisation 3D avec Blender - Création d'un environnement architectural complexe.</p>
           <div style="margin-top: 12px; display: flex; gap: 10px; flex-wrap: wrap;">
-            <button class="btn ghost" onclick="downloadFileDirect('tp 01.blend', 'TP 01 - Manar Ghemra.blend')">📁 Télécharger TP 01.blend</button>
-            <button class="btn ghost" onclick="downloadFileDirect('tp1.jpg', 'TP1 Preview - Manar Ghemra.jpg')">🖼 Télécharger tp1.jpg</button>
+            <a href="tp 01.blend" download="TP 01 - Manar Ghemra.blend" class="btn ghost">📁 Télécharger TP 01.blend</a>
+            <a href="tp1.jpg" download="TP1 Preview - Manar Ghemra.jpg" class="btn ghost">🖼 Télécharger tp1.jpg</a>
           </div>
         </div>
 
-        <!-- Projets statiques (originaux) -->
+        <!-- Projets statiques -->
         <div class="project-card">
           <h3>Chatbot universitaire</h3>
           <p>Répond aux questions concernant la faculté.</p>
@@ -102,7 +102,6 @@
           <p>Mon site web moderne et responsive présentant mes projets et compétences.</p>
           <a href="https://moccasin-issi-75.tiiny.site/" target="_blank" class="btn ghost">Voir le projet</a>
         </div>
-        <!-- Les projets dynamiques seront ajoutés ici via js.js -->
       </div>
     </section>
 
