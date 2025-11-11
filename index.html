@@ -7,7 +7,6 @@
   <link rel="stylesheet" href="css.css" />
 </head>
 <body>
-  <!-- Neon animated background -->
   <div class="bg">
     <div class="blob b1"></div>
     <div class="blob b2"></div>
@@ -21,9 +20,7 @@
     </div>
     <div class="top-right no-print">
       <button class="btn ghost" onclick="window.location='admin.html'">🔒 Admin</button>
-      <a href="CV.pdf" download>
-        <button class="btn" id="downloadBtn">⬇️ Télécharger CV</button>
-      </a>
+      <button class="btn" id="downloadBtn">⬇️ Télécharger CV</button>
     </div>
   </header>
 
@@ -63,17 +60,15 @@
     <section class="card reveal" id="projects-section">
       <h2 class="section-title">Projets récents</h2>
       <div id="project-list" class="projects-grid">
-        <!-- Projet TP 1 -->
         <div class="project-card">
           <h3>TP 1 - Modélisation 3D</h3>
           <p>Projet de conception et modélisation 3D avec Blender - Création d'un environnement architectural complexe.</p>
           <div style="margin-top: 12px; display: flex; gap: 10px; flex-wrap: wrap;">
-            <a href="tp 01.blend" download="TP 01 - Manar Ghemra.blend" class="btn ghost">📁 Télécharger TP 01.blend</a>
-            <a href="tp1.jpg" download="TP1 Preview - Manar Ghemra.jpg" class="btn ghost">🖼 Télécharger tp1.jpg</a>
+            <button class="btn ghost" onclick="downloadTP1Blender()">📁 Télécharger TP 01.blend</button>
+            <button class="btn ghost" onclick="downloadTP1Image()">🖼 Télécharger tp1.jpg</button>
           </div>
         </div>
 
-        <!-- Projets statiques -->
         <div class="project-card">
           <h3>Chatbot universitaire</h3>
           <p>Répond aux questions concernant la faculté.</p>
