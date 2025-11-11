@@ -61,59 +61,60 @@ function getAllProjects() {
   });
 }
 
-// Télécharger un fichier depuis Base64
-function downloadFile(base64Data, fileName) {
-  try {
-    // Créer un lien de téléchargement
-    const link = document.createElement('a');
-    link.href = base64Data;
-    link.download = fileName;
-    link.style.display = 'none';
-    
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    
-    return true;
-  } catch (error) {
-    console.error('Erreur téléchargement:', error);
-    return false;
-  }
+// دوال تحميل ملفات TP 1 - باستخدام روابط GitHub RAW
+function downloadTP1Blender() {
+  // استبدل 'username' و 'repository' باسم المستخدم والمستودع الحقيقي
+  const githubRawUrl = 'https://raw.githubusercontent.com/username/repository/main/tp%2001.blend';
+  
+  // فتح الرابط في نافذة جديدة للتحميل
+  window.open(githubRawUrl, '_blank');
+  
+  // عرض رسالة للمستخدم
+  alert('Le fichier Blender va être téléchargé. Si le téléchargement ne commence pas automatiquement, cliquez sur "View raw" ou "Download" dans la page qui s\'ouvre.');
 }
 
-// دوال تحميل ملفات TP 1 - الملفات في المجلد الرئيسي
-function downloadTP1Blender() {
-  // الرابط المباشر للملف في المجلد الرئيسي
-  const blenderFileUrl = 'tp 01.blend';
+function downloadTP1Image() {
+  // استبدل 'username' و 'repository' باسم المستخدم والمستودع الحقيقي
+  const githubRawUrl = 'https://raw.githubusercontent.com/username/repository/main/tp1.jpg';
+  
+  // فتح الرابط في نافذة جديدة للتحميل
+  window.open(githubRawUrl, '_blank');
+  
+  // عرض رسالة للمستخدم
+  alert('L\'image va être téléchargée. Si le téléchargement ne commence pas automatiquement, cliquez sur "View raw" ou "Download" dans la page qui s\'ouvre.');
+}
+
+// طريقة بديلة باستخدام إنشاء رابط تحميل
+function downloadTP1BlenderAlternative() {
+  // استبدل بمعلوماتك الحقيقية
+  const username = 'ton-username';
+  const repository = 'ton-repository';
+  const fileName = 'tp%2001.blend'; // %20 هو مسافة مشفرة
+  
+  const downloadUrl = `https://github.com/${username}/${repository}/raw/main/${fileName}`;
   
   const link = document.createElement('a');
-  link.href = blenderFileUrl;
-  link.download = 'TP 01 - Manar Ghemra.blend';
+  link.href = downloadUrl;
   link.target = '_blank';
-  
-  // إضافة حدث لمعالجة الأخطاء
-  link.onerror = function() {
-    alert('Le fichier Blender "tp 01.blend" n\'est pas disponible pour le moment. Veuillez vérifier que le fichier est bien uploadé sur GitHub.');
-  };
+  link.rel = 'noopener noreferrer';
   
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);
 }
 
-function downloadTP1Image() {
-  // الرابط المباشر للملف في المجلد الرئيسي
-  const imageFileUrl = 'tp1.jpg';
+function downloadTP1ImageAlternative() {
+  // استبدل بمعلوماتك الحقيقية
+  const username = 'ton-username';
+  const repository = 'ton-repository';
+  const fileName = 'tp1.jpg';
+  
+  const downloadUrl = `https://github.com/${username}/${repository}/raw/main/${fileName}`;
   
   const link = document.createElement('a');
-  link.href = imageFileUrl;
-  link.download = 'TP1 Preview - Manar Ghemra.jpg';
+  link.href = downloadUrl;
   link.target = '_blank';
-  
-  // إضافة حدث لمعالجة الأخطاء
-  link.onerror = function() {
-    alert('L\'image "tp1.jpg" n\'est pas disponible pour le moment. Veuillez vérifier que le fichier est bien uploadé sur GitHub.');
-  };
+  link.rel = 'noopener noreferrer';
   
   document.body.appendChild(link);
   link.click();
@@ -195,7 +196,4 @@ document.addEventListener('DOMContentLoaded', ()=>{
   setupActions();
   revealOnScroll();
   window.addEventListener('scroll', revealOnScroll);
-  
-  // إضافة رسالة تحذير إذا كانت الملفات غير متوفرة
-  console.log('Portfolio TP1 chargé - Les fichiers doivent être dans le dossier principal: tp 01.blend et tp1.jpg');
 });
