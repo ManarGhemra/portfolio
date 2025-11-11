@@ -1,6 +1,8 @@
-// js.js - Solution garantie pour le téléchargement
+// Configuration - REMPLACEZ CES VALEURS
+const GITHUB_USERNAME = 'ManarGhemra';
+const GITHUB_REPO = 'portfolio';
+const GITHUB_BRANCH = 'main';
 
-// Fonctions d'animation
 function escapeHtml(s){
   if(!s) return '';
   return s.replace(/[&<>"']/g, m => ({
@@ -22,97 +24,40 @@ function setupActions(){
   if(downloadBtn) downloadBtn.addEventListener('click', ()=> window.print());
 }
 
-// ========== SOLUTION GARANTIE POUR TÉLÉCHARGEMENT ==========
-
-// Fonction pour forcer le téléchargement IMMÉDIAT
-function forceDownload(filename, url) {
-    console.log(`🚀 Début du téléchargement: ${filename}`);
+// SOLUTION GITHUB RAW
+function downloadTP1Blender() {
+    const filename = 'TP 01 - Manar Ghemra.blend';
+    const fileUrl = `https://raw.githubusercontent.com/${GITHUB_USERNAME}/${GITHUB_REPO}/${GITHUB_BRANCH}/tp%2001.blend`;
     
-    // Afficher un indicateur de progression
-    showDownloadStatus(`Préparation du téléchargement: ${filename}`);
+    showDownloadStatus(`Téléchargement de ${filename}...`);
     
-    // Méthode 1: Utiliser un lien avec download attribute
+    // Ouvrir dans un nouvel onglet - ça va télécharger directement
+    window.open(fileUrl, '_blank');
+    
+    // Montrer les instructions après 1 seconde
     setTimeout(() => {
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = filename;
-        link.style.display = 'none';
-        
-        // Ajouter des événements pour suivre le processus
-        link.addEventListener('click', function() {
-            console.log('✅ Clic sur le lien de téléchargement');
-            showDownloadStatus(`Téléchargement en cours: ${filename}`);
-        });
-        
-        document.body.appendChild(link);
-        
-        // Simuler un clic COMPLET
-        const clickEvent = new MouseEvent('click', {
-            view: window,
-            bubbles: true,
-            cancelable: true,
-            button: 0
-        });
-        
-        // Déclencher l'événement
-        link.dispatchEvent(clickEvent);
-        
-        // Méthode alternative: clic natif
-        link.click();
-        
-        // Nettoyer après 2 secondes
-        setTimeout(() => {
-            if (link.parentNode) {
-                link.parentNode.removeChild(link);
-            }
-            showDownloadSuccess(filename);
-        }, 2000);
-        
-    }, 500);
+        showDownloadInstructions(filename, fileUrl);
+    }, 1000);
 }
 
-// Fonction pour gérer le téléchargement avec fetch (pour les gros fichiers)
-async function downloadWithFetch(filename, url) {
-    try {
-        showDownloadStatus(`Téléchargement de ${filename}...`);
-        
-        const response = await fetch(url);
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        
-        const blob = await response.blob();
-        const blobUrl = window.URL.createObjectURL(blob);
-        
-        const link = document.createElement('a');
-        link.href = blobUrl;
-        link.download = filename;
-        link.style.display = 'none';
-        
-        document.body.appendChild(link);
-        link.click();
-        
-        // Nettoyer
-        setTimeout(() => {
-            document.body.removeChild(link);
-            window.URL.revokeObjectURL(blobUrl);
-            showDownloadSuccess(filename);
-        }, 1000);
-        
-    } catch (error) {
-        console.error('❌ Erreur fetch:', error);
-        // Retour à la méthode simple
-        forceDownload(filename, url);
-    }
+function downloadTP1Image() {
+    const filename = 'TP1 Preview - Manar Ghemra.jpg';
+    const fileUrl = `https://raw.githubusercontent.com/${GITHUB_USERNAME}/${GITHUB_REPO}/${GITHUB_BRANCH}/tp1.jpg`;
+    
+    showDownloadStatus(`Téléchargement de ${filename}...`);
+    
+    // Ouvrir dans un nouvel onglet
+    window.open(fileUrl, '_blank');
+    
+    setTimeout(() => {
+        showDownloadInstructions(filename, fileUrl);
+    }, 1000);
 }
 
-// Indicateurs visuels améliorés
+// Fonctions d'affichage
 function showDownloadStatus(message) {
-    // Supprimer tout statut existant
     const existingStatus = document.getElementById('download-status');
-    if (existingStatus) {
-        existingStatus.remove();
-    }
+    if (existingStatus) existingStatus.remove();
     
     const statusDiv = document.createElement('div');
     statusDiv.id = 'download-status';
@@ -144,129 +89,86 @@ function showDownloadStatus(message) {
     document.body.appendChild(statusDiv);
 }
 
-function showDownloadSuccess(filename) {
-    const existingStatus = document.getElementById('download-status');
-    if (existingStatus) {
-        existingStatus.remove();
-    }
+function showDownloadInstructions(filename, fileUrl) {
+    const existingInstructions = document.getElementById('download-instructions');
+    if (existingInstructions) existingInstructions.remove();
     
-    const successDiv = document.createElement('div');
-    successDiv.id = 'download-success';
-    successDiv.style.cssText = `
+    const instructionsDiv = document.createElement('div');
+    instructionsDiv.id = 'download-instructions';
+    instructionsDiv.style.cssText = `
         position: fixed;
-        top: 20px;
-        right: 20px;
-        background: linear-gradient(135deg, #00b09b 0%, #96c93d 100%);
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: var(--card);
+        border: 2px solid var(--accent1);
+        border-radius: 15px;
+        padding: 25px;
+        z-index: 10001;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.7);
+        max-width: 400px;
         color: white;
-        padding: 15px 20px;
-        border-radius: 10px;
-        z-index: 10000;
-        box-shadow: 0 5px 25px rgba(0,0,0,0.3);
-        animation: slideInRight 0.3s ease;
-        max-width: 300px;
     `;
     
-    successDiv.innerHTML = `
-        <div style="display: flex; align-items: center; gap: 10px;">
-            <span style="font-size: 18px;">✅</span>
-            <div>
-                <div style="font-weight: bold;">Téléchargement réussi!</div>
-                <div style="font-size: 12px; opacity: 0.9;">${filename}</div>
-            </div>
+    instructionsDiv.innerHTML = `
+        <div style="text-align: center; margin-bottom: 20px;">
+            <div style="font-size: 24px; margin-bottom: 10px;">💡</div>
+            <div style="font-weight: bold; color: var(--accent2); margin-bottom: 10px;">Instructions de Téléchargement</div>
+            <div style="color: var(--muted); font-size: 14px; margin-bottom: 15px;">${filename}</div>
+        </div>
+        
+        <div style="background: rgba(255,255,255,0.05); padding: 15px; border-radius: 10px; margin-bottom: 20px;">
+            <div style="font-weight: bold; margin-bottom: 10px; color: var(--accent1);">📝 Étapes:</div>
+            <ol style="text-align: left; padding-left: 20px; margin: 0; font-size: 13px; line-height: 1.6;">
+                <li>Une nouvelle page s'est ouverte</li>
+                <li><strong>Cliquez droit</strong> n'importe où sur la page</li>
+                <li>Sélectionnez <strong>"Enregistrer sous..."</strong></li>
+                <li>Choisissez l'emplacement de sauvegarde</li>
+            </ol>
+        </div>
+        
+        <div style="display: flex; gap: 10px; justify-content: center;">
+            <button onclick="copyDownloadLink('${fileUrl}')" style="padding: 8px 15px; background: var(--accent1); border: none; border-radius: 8px; color: white; cursor: pointer; font-size: 12px;">
+                📋 Copier le lien
+            </button>
+            <button onclick="this.parentElement.parentElement.parentElement.remove()" style="padding: 8px 15px; background: rgba(255,255,255,0.1); border: 1px solid var(--muted); border-radius: 8px; color: white; cursor: pointer; font-size: 12px;">
+                Fermer
+            </button>
         </div>
     `;
     
-    document.body.appendChild(successDiv);
-    
-    // Supprimer après 3 secondes
-    setTimeout(() => {
-        if (successDiv.parentNode) {
-            successDiv.remove();
-        }
-    }, 3000);
+    document.body.appendChild(instructionsDiv);
 }
 
-// CSS Animations
-function addDownloadStyles() {
-    const style = document.createElement('style');
-    style.textContent = `
-        @keyframes slideInRight {
-            from {
-                transform: translateX(100%);
-                opacity: 0;
-            }
-            to {
-                transform: translateX(0);
-                opacity: 1;
-            }
-        }
+function copyDownloadLink(url) {
+    navigator.clipboard.writeText(url).then(() => {
+        const btn = event.target;
+        const originalText = btn.textContent;
+        btn.textContent = '✅ Lien copié!';
+        btn.style.background = '#00C853';
         
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-        
-        /* Styles pour les liens de téléchargement */
-        .download-btn {
-            transition: all 0.3s ease;
-            position: relative;
-            overflow: hidden;
-        }
-        
-        .download-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(124, 77, 255, 0.4);
-        }
-        
-        .download-btn:active {
-            transform: translateY(0);
-        }
-        
-        /* Effet de pulsation pour indiquer que c'est cliquable */
-        .download-btn.pulse {
-            animation: pulse 2s infinite;
-        }
-        
-        @keyframes pulse {
-            0% { box-shadow: 0 0 0 0 rgba(124, 77, 255, 0.7); }
-            70% { box-shadow: 0 0 0 10px rgba(124, 77, 255, 0); }
-            100% { box-shadow: 0 0 0 0 rgba(124, 77, 255, 0); }
-        }
-    `;
-    document.head.appendChild(style);
-}
-
-// Améliorer les boutons de téléchargement
-function enhanceDownloadButtons() {
-    const downloadButtons = document.querySelectorAll('a[download]');
-    downloadButtons.forEach(btn => {
-        // Ajouter des classes CSS
-        btn.classList.add('download-btn', 'pulse');
-        
-        // Ajouter un écouteur d'événements pour le suivi
-        btn.addEventListener('click', function(e) {
-            const filename = this.download;
-            console.log(`🎯 Clic sur le bouton de téléchargement: ${filename}`);
-            showDownloadStatus(`Lancement du téléchargement: ${filename}`);
-        });
+        setTimeout(() => {
+            btn.textContent = originalText;
+            btn.style.background = 'var(--accent1)';
+        }, 2000);
     });
 }
 
-// Vérifier que les fichiers existent
-async function verifyFiles() {
+// Vérifier la disponibilité des fichiers
+async function checkFilesAvailability() {
     const files = [
-        { name: 'tp 01.blend', url: 'tp 01.blend' },
-        { name: 'tp1.jpg', url: 'tp1.jpg' }
+        { name: 'tp 01.blend', url: `https://raw.githubusercontent.com/${GITHUB_USERNAME}/${GITHUB_REPO}/${GITHUB_BRANCH}/tp%2001.blend` },
+        { name: 'tp1.jpg', url: `https://raw.githubusercontent.com/${GITHUB_USERNAME}/${GITHUB_REPO}/${GITHUB_BRANCH}/tp1.jpg` }
     ];
     
-    console.group('🔍 Vérification des fichiers');
+    console.group('🔍 Vérification des fichiers sur GitHub');
     for (const file of files) {
         try {
             const response = await fetch(file.url, { method: 'HEAD' });
             if (response.ok) {
-                console.log(`✅ ${file.name} - DISPONIBLE (${response.status})`);
+                console.log(`✅ ${file.name} - DISPONIBLE`);
             } else {
-                console.warn(`⚠️ ${file.name} - NON DISPONIBLE (${response.status})`);
+                console.warn(`❌ ${file.name} - NON DISPONIBLE (${response.status})`);
             }
         } catch (error) {
             console.error(`❌ ${file.name} - ERREUR:`, error.message);
@@ -275,8 +177,24 @@ async function verifyFiles() {
     console.groupEnd();
 }
 
-// ========== FONCTIONS EXISTANTES ==========
+// Ajouter les styles CSS
+function addDownloadStyles() {
+    const style = document.createElement('style');
+    style.textContent = `
+        @keyframes slideInRight {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    `;
+    document.head.appendChild(style);
+}
 
+// Fonctions IndexedDB existantes
 function initDB() {
     return new Promise((resolve, reject) => {
         const request = indexedDB.open('PortfolioDB', 1);
@@ -329,30 +247,16 @@ async function appendStoredProjects(){
     }
 }
 
-// ========== INITIALISATION ==========
-
+// Initialisation
 document.addEventListener('DOMContentLoaded', function(){
-    // Ajouter les styles CSS
     addDownloadStyles();
-    
-    // Configurer les actions
     setupActions();
     revealOnScroll();
-    
-    // Améliorer les boutons de téléchargement
-    enhanceDownloadButtons();
-    
-    // Vérifier les fichiers
-    verifyFiles();
-    
-    // Charger les projets stockés
     appendStoredProjects();
-    
-    // Événement de scroll
+    checkFilesAvailability();
     window.addEventListener('scroll', revealOnScroll);
     
-    console.log('🎉 Portfolio complètement chargé - Téléchargements activés!');
-    console.log('📁 Fichiers disponibles:');
-    console.log('   - tp 01.blend');
-    console.log('   - tp1.jpg');
+    console.log('🚀 Portfolio chargé - GitHub Raw URLs activés');
+    console.log('📁 Utilisateur GitHub:', GITHUB_USERNAME);
+    console.log('📁 Repository:', GITHUB_REPO);
 });
