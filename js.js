@@ -1,8 +1,8 @@
 // GitHub Raw URLs — عدل حسب المستودع والملفات
 const FILE_URLS = {
     CV: 'https://raw.githubusercontent.com/ManarGhemra/portfolio/main/CV-ManarGhemra.pdf',
-    TP_BLEND: 'https://raw.githubusercontent.com/ManarGhemra/portfolio/5617996350c401855282951ba50f1410d23bbb76/tp01.blend',
-    TP_IMAGE: 'https://raw.githubusercontent.com/ManarGhemra/portfolio/main/tp1.png'
+    TP_BLEND: 'sha256:7aef4a0cbe7defd4717555e3d1363f6556c2bc330def8918cd6abec47ee15816',
+    TP_IMAGE: 'sha256:455f5a596481117a028a87ccbd1BQZKqdp2CV3QV5nUEsqSg1ygegLmqRygj0592'
 };
 
 
