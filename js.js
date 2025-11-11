@@ -1,7 +1,9 @@
-// Configuration
-const GITHUB_USERNAME = 'ManarGhemra';
-const GITHUB_REPO = 'portfolio';
-const GITHUB_BRANCH = 'main';
+// Google Drive IDs — remplace par tes IDs réels
+const DRIVE_IDS = {
+    CV: '1YRkuF7Ieluxs1lkewLxNVRD6meAbfKnj',
+    TP_BLEND: 'ID_DU_BLEND',
+    TP_IMAGE: 'ID_DU_IMAGE'
+};
 
 function escapeHtml(s){
   if(!s) return '';
@@ -17,8 +19,9 @@ function revealOnScroll(){
   });
 }
 
-// Fonction pour télécharger un fichier depuis GitHub directement
-async function downloadFileFromGitHub(filename, fileUrl){
+// Fonction pour télécharger un fichier depuis Google Drive
+async function downloadFileFromDrive(filename, fileId){
+    const fileUrl = `https://drive.google.com/uc?export=download&id=${fileId}`;
     try {
         const response = await fetch(fileUrl);
         if(!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
@@ -29,10 +32,10 @@ async function downloadFileFromGitHub(filename, fileUrl){
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
-        URL.revokeObjectURL(a.href); // libère la mémoire
+        URL.revokeObjectURL(a.href);
     } catch(e){
         console.error(`Erreur téléchargement ${filename}:`, e);
-        alert(`Impossible de télécharger ${filename}. Vérifie l'URL ou la disponibilité du fichier.`);
+        alert(`Impossible de télécharger ${filename}.`);
     }
 }
 
@@ -43,21 +46,18 @@ function setupActions(){
   if(printBtn) printBtn.addEventListener('click', ()=> window.print());
   if(downloadBtn){
     downloadBtn.addEventListener('click', ()=>{
-      const url = `https://raw.githubusercontent.com/${GITHUB_USERNAME}/${GITHUB_REPO}/${GITHUB_BRANCH}/CV-ManarGhemra.pdf`;
-      downloadFileFromGitHub('CV-ManarGhemra.pdf', url);
+      downloadFileFromDrive('CV‑ManarGhemra.pdf', DRIVE_IDS.CV);
     });
   }
 }
 
 // Buttons TP1
 function downloadTP1Blender(){
-    const fileUrl = `https://raw.githubusercontent.com/${GITHUB_USERNAME}/${GITHUB_REPO}/${GITHUB_BRANCH}/tp%2001.blend`;
-    downloadFileFromGitHub('TP 01 - Manar Ghemra.blend', fileUrl);
+    downloadFileFromDrive('TP 01 ‑ Manar Ghemra.blend', DRIVE_IDS.TP_BLEND);
 }
 
 function downloadTP1Image(){
-    const fileUrl = `https://raw.githubusercontent.com/${GITHUB_USERNAME}/${GITHUB_REPO}/${GITHUB_BRANCH}/tp1.png`;
-    downloadFileFromGitHub('TP1 Preview - Manar Ghemra.png', fileUrl);
+    downloadFileFromDrive('TP1 Preview ‑ Manar Ghemra.png', DRIVE_IDS.TP_IMAGE);
 }
 
 // Ajouter les styles CSS pour animations
@@ -128,33 +128,12 @@ async function appendStoredProjects(){
   }
 }
 
-// Vérifier disponibilité fichiers (facultatif)
-async function checkFilesAvailability() {
-  const files = [
-    { name: 'CV-ManarGhemra.pdf', url: `https://raw.githubusercontent.com/${GITHUB_USERNAME}/${GITHUB_REPO}/${GITHUB_BRANCH}/CV-ManarGhemra.pdf` },
-    { name: 'tp 01.blend', url: `https://raw.githubusercontent.com/${GITHUB_USERNAME}/${GITHUB_REPO}/${GITHUB_BRANCH}/tp%2001.blend` },
-    { name: 'tp1.png', url: `https://raw.githubusercontent.com/${GITHUB_USERNAME}/${GITHUB_REPO}/${GITHUB_BRANCH}/tp1.png` }
-  ];
-  console.group('🔍 Vérification des fichiers sur GitHub');
-  for (const file of files) {
-    try {
-      const response = await fetch(file.url, { method: 'HEAD' });
-      if (response.ok) console.log(`✅ ${file.name} - DISPONIBLE`);
-      else console.warn(`❌ ${file.name} - NON DISPONIBLE (${response.status})`);
-    } catch (error) {
-      console.error(`❌ ${file.name} - ERREUR:`, error.message);
-    }
-  }
-  console.groupEnd();
-}
-
 // Initialisation
 document.addEventListener('DOMContentLoaded', function(){
   addDownloadStyles();
   setupActions();
   revealOnScroll();
   appendStoredProjects();
-  checkFilesAvailability();
   window.addEventListener('scroll', revealOnScroll);
-  console.log('🚀 Portfolio chargé - GitHub Raw URLs activés');
+  console.log('🚀 Portfolio chargé — Google Drive Download activé');
 });
