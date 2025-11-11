@@ -1,330 +1,52 @@
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Admin — Portfolio</title>
-  <link rel="stylesheet" href="css.css" />
-</head>
-<body>
-  <div class="bg"><div class="blob b1"></div><div class="blob b2"></div></div>
+<!-- اترك التصميم كما هو -->
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
+import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js";
+import { getStorage, ref, uploadBytes } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-storage.js";
 
-  <main class="wrap" style="max-width:760px">
-    <section class="card" style="flex-direction:column;align-items:stretch">
-      <h2 class="section-title">🔐 Espace Administrateur</h2>
+const firebaseConfig = {
+  apiKey: "AIzaSyCYhzsMUJX7Q7Zk58R28CS-8KZmZCdgrO4",
+  authDomain: "portfolio-manar-ghemra.firebaseapp.com",
+  projectId: "portfolio-manar-ghemra",
+  storageBucket: "portfolio-manar-ghemra.appspot.com",
+  messagingSenderId: "644022946013",
+  appId: "1:644022946013:web:5465337e7d0f9546953334",
+  measurementId: "G-6KJH3DTF6D"
+};
 
-      <div id="loginBlock">
-        <input id="pwd" type="password" placeholder="Entrez le mot de passe" style="padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,0.06);background:transparent;color:inherit;margin-bottom:12px">
-        <div style="display:flex;gap:10px">
-          <button class="btn" onclick="login()">Se connecter</button>
-          <button class="btn ghost" onclick="location.href='index.html'">Retour</button>
-        </div>
-      </div>
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+const storage = getStorage(app);
 
-      <div id="adminPanel" style="display:none;margin-top:18px">
-        <h3>➕ Ajouter un projet</h3>
+async function uploadFile(file, folder) {
+  const storageRef = ref(storage, `${folder}/${Date.now()}_${file.name}`);
+  await uploadBytes(storageRef, file);
+  return storageRef.fullPath;
+}
 
-        <input id="title" placeholder="Titre du projet" style="width:100%;padding:10px;margin:6px 0;border-radius:8px;background:transparent;border:1px solid rgba(255,255,255,0.04);color:inherit">
-        <input id="desc" placeholder="Courte description" style="width:100%;padding:10px;margin:6px 0;border-radius:8px;background:transparent;border:1px solid rgba(255,255,255,0.04);color:inherit">
-        
-        <!-- Section pour les fichiers -->
-        <div style="margin:12px 0">
-          <h4 style="margin-bottom:8px">Fichiers du projet (au moins un requis)</h4>
-          
-          <div style="margin-bottom:10px">
-            <label style="display:block;margin-bottom:6px">Fichier Blender (.blend)</label>
-            <input type="file" id="blendFile" accept=".blend" style="width:100%;padding:8px;border-radius:8px;background:transparent;border:1px solid rgba(255,255,255,0.04);color:inherit">
-            <p style="font-size:0.85rem;color:var(--muted);margin:4px 0">Taille maximale: 10000MB</p>
-          </div>
-          
-          <div style="margin-bottom:10px">
-            <label style="display:block;margin-bottom:6px">Image du projet (.png, .jpg)</label>
-            <input type="file" id="imageFile" accept=".png,.jpg,.jpeg" style="width:100%;padding:8px;border-radius:8px;background:transparent;border:1px solid rgba(255,255,255,0.04);color:inherit">
-            <p style="font-size:0.85rem;color:var(--muted);margin:4px 0">Taille maximale: 50MB</p>
-          </div>
-          
-          <div style="margin-bottom:10px">
-            <label style="display:block;margin-bottom:6px">Vidéo du projet (.mp4, .mov)</label>
-            <input type="file" id="videoFile" accept=".mp4,.mov" style="width:100%;padding:8px;border-radius:8px;background:transparent;border:1px solid rgba(255,255,255,0.04);color:inherit">
-            <p style="font-size:0.85rem;color:var(--muted);margin:4px 0">Taille maximale: 900MB</p>
-          </div>
-        </div>
+async function addProject() {
+  const title = document.getElementById('title').value.trim();
+  const desc = document.getElementById('desc').value.trim();
+  if (!title || !desc) { alert('Remplis le titre et la description'); return; }
 
-        <div style="display:flex;gap:10px;margin-top:10px">
-          <button class="btn" onclick="addProject()">Ajouter</button>
-          <button class="btn ghost" onclick="clearAll()">Supprimer tout</button>
-          <button class="btn ghost" onclick="logout()">Se déconnecter</button>
-        </div>
+  const files = {};
+  const blendFile = document.getElementById('blendFile').files[0];
+  const imageFile = document.getElementById('imageFile').files[0];
+  const videoFile = document.getElementById('videoFile').files[0];
 
-        <h3 style="margin-top:18px">Projets actuels</h3>
-        <div id="currentList" style="margin-top:10px"></div>
-      </div>
-    </section>
-  </main>
+  if (blendFile) files.blend = await uploadFile(blendFile, 'blends');
+  if (imageFile) files.image = await uploadFile(imageFile, 'images');
+  if (videoFile) files.video = await uploadFile(videoFile, 'videos');
 
-  <script>
-    const PASSWORD = 'manar2025';
-    let db;
+  if (Object.keys(files).length === 0) { alert('Ajoute au moins un fichier'); return; }
 
-    // Initialiser IndexedDB
-    function initDB() {
-      return new Promise((resolve, reject) => {
-        const request = indexedDB.open('PortfolioDB', 1);
-        
-        request.onerror = () => reject(request.error);
-        request.onsuccess = () => {
-          db = request.result;
-          resolve(db);
-        };
-        
-        request.onupgradeneeded = (event) => {
-          const database = event.target.result;
-          if (!database.objectStoreNames.contains('projects')) {
-            const store = database.createObjectStore('projects', { keyPath: 'id', autoIncrement: true });
-            store.createIndex('title', 'title', { unique: false });
-          }
-        };
-      });
-    }
-
-    // Convertir fichier en Base64
-    function fileToBase64(file) {
-      return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => resolve(reader.result);
-        reader.onerror = reject;
-        reader.readAsDataURL(file);
-      });
-    }
-
-    async function login(){
-      const v = document.getElementById('pwd').value;
-      if(v === PASSWORD){
-        try {
-          await initDB();
-          document.getElementById('loginBlock').style.display = 'none';
-          document.getElementById('adminPanel').style.display = 'block';
-          renderList();
-        } catch (error) {
-          alert('Erreur initialisation base de données: ' + error.message);
-        }
-      } else alert('Mot de passe incorrect !');
-    }
-
-    function logout(){
-      document.getElementById('pwd').value = '';
-      document.getElementById('loginBlock').style.display = 'block';
-      document.getElementById('adminPanel').style.display = 'none';
-    }
-
-    async function addProject(){
-      const title = document.getElementById('title').value.trim();
-      const desc = document.getElementById('desc').value.trim();
-      
-      if(!title || !desc){ 
-        alert('Remplis le titre et la description !'); 
-        return; 
-      }
-
-      const projectData = { 
-        title, 
-        desc, 
-        files: {},
-        date: new Date().toISOString()
-      };
-
-      let hasFiles = false;
-
-      try {
-        // Traiter le fichier Blender
-        const blendFile = document.getElementById('blendFile').files[0];
-        if (blendFile) {
-          if (blendFile.size > 10000 * 1024 * 1024) {
-            alert('Le fichier Blender est trop volumineux (max 10000MB) !');
-            return;
-          }
-          if (!blendFile.name.toLowerCase().endsWith('.blend')) {
-            alert('Veuillez sélectionner un fichier Blender (.blend) !');
-            return;
-          }
-          const base64 = await fileToBase64(blendFile);
-          projectData.files.blend = {
-            data: base64,
-            name: blendFile.name,
-            size: blendFile.size,
-            type: blendFile.type
-          };
-          hasFiles = true;
-        }
-
-        // Traiter l'image
-        const imageFile = document.getElementById('imageFile').files[0];
-        if (imageFile) {
-          if (imageFile.size > 50 * 1024 * 1024) {
-            alert('L\'image est trop volumineuse (max 50MB) !');
-            return;
-          }
-          const validImageTypes = ['image/png', 'image/jpeg', 'image/jpg'];
-          if (!validImageTypes.includes(imageFile.type)) {
-            alert('Veuillez sélectionner une image valide (PNG, JPG) !');
-            return;
-          }
-          const base64 = await fileToBase64(imageFile);
-          projectData.files.image = {
-            data: base64,
-            name: imageFile.name,
-            size: imageFile.size,
-            type: imageFile.type
-          };
-          hasFiles = true;
-        }
-
-        // Traiter la vidéo
-        const videoFile = document.getElementById('videoFile').files[0];
-        if (videoFile) {
-          if (videoFile.size > 900 * 1024 * 1024) {
-            alert('La vidéo est trop volumineuse (max 900MB) !');
-            return;
-          }
-          const validVideoTypes = ['video/mp4', 'video/quicktime'];
-          if (!validVideoTypes.includes(videoFile.type)) {
-            alert('Veuillez sélectionner une vidéo valide (MP4, MOV) !');
-            return;
-          }
-          const base64 = await fileToBase64(videoFile);
-          projectData.files.video = {
-            data: base64,
-            name: videoFile.name,
-            size: videoFile.size,
-            type: videoFile.type
-          };
-          hasFiles = true;
-        }
-
-        if (!hasFiles) {
-          alert('Veuillez ajouter au moins un fichier (Blender, image ou vidéo) !');
-          return;
-        }
-
-        // Sauvegarder dans IndexedDB
-        const transaction = db.transaction(['projects'], 'readwrite');
-        const store = transaction.objectStore('projects');
-        const request = store.add(projectData);
-
-        request.onsuccess = () => {
-          document.getElementById('title').value = '';
-          document.getElementById('desc').value = '';
-          document.getElementById('blendFile').value = '';
-          document.getElementById('imageFile').value = '';
-          document.getElementById('videoFile').value = '';
-          renderList();
-          alert('Projet ajouté ✅\nFichiers: ' + Object.keys(projectData.files).join(', '));
-        };
-
-        request.onerror = () => {
-          alert('Erreur lors de la sauvegarde du projet !');
-        };
-
-      } catch (error) {
-        alert('Erreur: ' + error.message);
-      }
-    }
-
-    async function renderList(){
-      const list = document.getElementById('currentList');
-      
-      try {
-        const projects = await getAllProjects();
-        
-        if(projects.length === 0){
-          list.innerHTML = '<p class="muted">Aucun projet enregistré.</p>';
-          return;
-        }
-        
-        list.innerHTML = projects.map((p,idx)=>`
-          <div style="display:flex;justify-content:space-between;align-items:center;padding:12px;border-radius:8px;background:rgba(255,255,255,0.02);margin-bottom:10px;border:1px solid rgba(255,255,255,0.05)">
-            <div style="flex:1">
-              <strong style="color:var(--accent1);font-size:1.1rem">${escapeHtml(p.title)}</strong>
-              <div class="muted" style="font-size:0.9rem;margin:4px 0">${escapeHtml(p.desc)}</div>
-              <div style="font-size:0.8rem;color:var(--muted);margin-top:6px">
-                ${p.files.blend ? '📁 Blender • ' : ''}
-                ${p.files.image ? '🖼 Image • ' : ''}
-                ${p.files.video ? '🎬 Vidéo' : ''}
-              </div>
-              ${p.date ? `<div style="font-size:0.7rem;color:var(--muted);margin-top:4px">${new Date(p.date).toLocaleDateString('fr-FR')}</div>` : ''}
-            </div>
-            <div style="display:flex;gap:8px;margin-left:12px">
-              <button class="btn ghost" onclick="removeProject(${p.id})" style="padding:6px 12px;font-size:0.8rem">Supprimer</button>
-            </div>
-          </div>
-        `).join('');
-      } catch (error) {
-        list.innerHTML = '<p class="muted">Erreur de chargement des projets.</p>';
-      }
-    }
-
-    function getAllProjects() {
-      return new Promise((resolve, reject) => {
-        const transaction = db.transaction(['projects'], 'readonly');
-        const store = transaction.objectStore('projects');
-        const request = store.getAll();
-        
-        request.onsuccess = () => resolve(request.result);
-        request.onerror = () => reject(request.error);
-      });
-    }
-
-    async function removeProject(id){
-      if(!confirm('Supprimer ce projet ?')) return;
-      
-      try {
-        const transaction = db.transaction(['projects'], 'readwrite');
-        const store = transaction.objectStore('projects');
-        const request = store.delete(id);
-        
-        request.onsuccess = () => {
-          renderList();
-          alert('Projet supprimé avec succès !');
-        };
-        
-        request.onerror = () => {
-          alert('Erreur lors de la suppression !');
-        };
-      } catch (error) {
-        alert('Erreur: ' + error.message);
-      }
-    }
-
-    async function clearAll(){
-      if(!confirm('Supprimer TOUS les projets ? Cette action est irréversible !')) return;
-      
-      try {
-        const transaction = db.transaction(['projects'], 'readwrite');
-        const store = transaction.objectStore('projects');
-        const request = store.clear();
-        
-        request.onsuccess = () => {
-          renderList();
-          alert('Tous les projets ont été supprimés.');
-        };
-        
-        request.onerror = () => {
-          alert('Erreur lors de la suppression !');
-        };
-      } catch (error) {
-        alert('Erreur: ' + error.message);
-      }
-    }
-
-    // utilitaires
-    function escapeHtml(s){ 
-      if(!s) return ''; 
-      return s.replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); 
-    }
-
-    document.addEventListener('DOMContentLoaded', ()=> {
-      console.log('Admin panel loaded');
-    });
-  </script>
-</body>
-</html>
+  await addDoc(collection(db, 'projects'), { title, desc, files, date: serverTimestamp() });
+  alert('Projet ajouté avec succès ✅');
+  document.getElementById('title').value = '';
+  document.getElementById('desc').value = '';
+  document.getElementById('blendFile').value = '';
+  document.getElementById('imageFile').value = '';
+  document.getElementById('videoFile').value = '';
+}
+window.addProject = addProject;
+</script>
