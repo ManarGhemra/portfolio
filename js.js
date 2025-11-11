@@ -81,6 +81,45 @@ function downloadFile(base64Data, fileName) {
   }
 }
 
+// دوال تحميل ملفات TP 1 - الملفات في المجلد الرئيسي
+function downloadTP1Blender() {
+  // الرابط المباشر للملف في المجلد الرئيسي
+  const blenderFileUrl = 'tp 01.blend';
+  
+  const link = document.createElement('a');
+  link.href = blenderFileUrl;
+  link.download = 'TP 01 - Manar Ghemra.blend';
+  link.target = '_blank';
+  
+  // إضافة حدث لمعالجة الأخطاء
+  link.onerror = function() {
+    alert('Le fichier Blender "tp 01.blend" n\'est pas disponible pour le moment. Veuillez vérifier que le fichier est bien uploadé sur GitHub.');
+  };
+  
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+}
+
+function downloadTP1Image() {
+  // الرابط المباشر للملف في المجلد الرئيسي
+  const imageFileUrl = 'tp1.jpg';
+  
+  const link = document.createElement('a');
+  link.href = imageFileUrl;
+  link.download = 'TP1 Preview - Manar Ghemra.jpg';
+  link.target = '_blank';
+  
+  // إضافة حدث لمعالجة الأخطاء
+  link.onerror = function() {
+    alert('L\'image "tp1.jpg" n\'est pas disponible pour le moment. Veuillez vérifier que le fichier est bien uploadé sur GitHub.');
+  };
+  
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+}
+
 // إضافة المشاريع المخزنة
 async function appendStoredProjects(){
   try {
@@ -150,9 +189,13 @@ async function appendStoredProjects(){
   }
 }
 
+// تهيئة الصفحة
 document.addEventListener('DOMContentLoaded', ()=>{
   appendStoredProjects();
   setupActions();
   revealOnScroll();
   window.addEventListener('scroll', revealOnScroll);
+  
+  // إضافة رسالة تحذير إذا كانت الملفات غير متوفرة
+  console.log('Portfolio TP1 chargé - Les fichiers doivent être dans le dossier principal: tp 01.blend et tp1.jpg');
 });
