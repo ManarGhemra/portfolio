@@ -1,233 +1,148 @@
-// js.js - comportement de la page index (reveal, print, ajout dynamique des projets si présents)
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Portfolio — Ghemra Manar</title>
+  <link rel="stylesheet" href="css.css" />
+</head>
+<body>
+  <!-- Neon animated background -->
+  <div class="bg">
+    <div class="blob b1"></div>
+    <div class="blob b2"></div>
+    <div class="grid-glow"></div>
+  </div>
 
-function escapeHtml(s){
-  if(!s) return '';
-  return s.replace(/[&<>"']/g, m => ({
-    '&':'&amp;',
-    '<':'&lt;',
-    '>':'&gt;',
-    '"':'&quot;',
-    "'":'&#39;'
-  }[m]));
-}
+  <header class="top">
+    <div class="top-left">
+      <h1 class="name">Ghemra <span>Manar</span></h1>
+      <p class="role">Développeuse Web • Ingénierie des Données</p>
+    </div>
+    <div class="top-right no-print">
+      <button class="btn ghost" onclick="window.location='admin.html'">🔒 Admin</button>
+      <button class="btn" id="downloadBtn">⬇️ Télécharger CV</button>
+    </div>
+  </header>
 
-function revealOnScroll(){
-  document.querySelectorAll('.reveal').forEach(el=>{
-    const r = el.getBoundingClientRect();
-    if(r.top < window.innerHeight - 80) el.classList.add('visible');
-  });
-}
-
-function setupActions(){
-  const printBtn = document.getElementById('printBtn');
-  const downloadBtn = document.getElementById('downloadBtn');
-  if(printBtn) printBtn.addEventListener('click', ()=> window.print());
-  if(downloadBtn) downloadBtn.addEventListener('click', ()=> window.print());
-}
-
-// Initialiser IndexedDB
-function initDB() {
-  return new Promise((resolve, reject) => {
-    const request = indexedDB.open('PortfolioDB', 1);
-    
-    request.onerror = () => reject(request.error);
-    request.onsuccess = () => resolve(request.result);
-    
-    request.onupgradeneeded = (event) => {
-      const database = event.target.result;
-      if (!database.objectStoreNames.contains('projects')) {
-        const store = database.createObjectStore('projects', { keyPath: 'id', autoIncrement: true });
-        store.createIndex('title', 'title', { unique: false });
-      }
-    };
-  });
-}
-
-// Obtenir tous les projets
-function getAllProjects() {
-  return new Promise((resolve, reject) => {
-    const request = indexedDB.open('PortfolioDB', 1);
-    
-    request.onerror = () => reject(request.error);
-    request.onsuccess = () => {
-      const db = request.result;
-      const transaction = db.transaction(['projects'], 'readonly');
-      const store = transaction.objectStore('projects');
-      const getAllRequest = store.getAll();
-      
-      getAllRequest.onsuccess = () => resolve(getAllRequest.result);
-      getAllRequest.onerror = () => reject(getAllRequest.error);
-    };
-  });
-}
-
-// Fonctions de téléchargement améliorées pour TP1
-function downloadTP1Blender() {
-  try {
-    // Essayer plusieurs méthodes de téléchargement
-    const link = document.createElement('a');
-    link.href = 'tp 01.blend';
-    link.download = 'TP 01 - Manar Ghemra.blend';
-    
-    // Ajouter des événements pour gérer les erreurs
-    link.onclick = function(e) {
-      console.log('Tentative de téléchargement du fichier Blender');
-    };
-    
-    link.onerror = function(e) {
-      console.error('Erreur lors du téléchargement du fichier Blender');
-      // Méthode alternative
-      window.open('tp 01.blend', '_blank');
-    };
-    
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    
-  } catch (error) {
-    console.error('Erreur dans downloadTP1Blender:', error);
-    // Ouvrir dans une nouvelle fenêtre comme solution de secours
-    window.open('tp 01.blend', '_blank');
-  }
-}
-
-function downloadTP1Image() {
-  try {
-    const link = document.createElement('a');
-    link.href = 'tp1.jpg';
-    link.download = 'TP1 Preview - Manar Ghemra.jpg';
-    
-    link.onerror = function(e) {
-      console.error('Erreur lors du téléchargement de l\'image');
-      window.open('tp1.jpg', '_blank');
-    };
-    
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    
-  } catch (error) {
-    console.error('Erreur dans downloadTP1Image:', error);
-    window.open('tp1.jpg', '_blank');
-  }
-}
-
-// Télécharger un fichier depuis Base64 (pour les projets admin)
-function downloadFile(base64Data, fileName) {
-  try {
-    const link = document.createElement('a');
-    link.href = base64Data;
-    link.download = fileName;
-    link.style.display = 'none';
-    
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    
-    return true;
-  } catch (error) {
-    console.error('Erreur téléchargement:', error);
-    return false;
-  }
-}
-
-// Ajouter les projets stockés depuis IndexedDB
-async function appendStoredProjects(){
-  try {
-    await initDB();
-    const stored = await getAllProjects();
-    const container = document.getElementById('project-list');
-    
-    if(!container || stored.length === 0) {
-      return;
-    }
-
-    const existingTitles = Array.from(container.querySelectorAll('.project-card h3'))
-                               .map(h=>h.textContent.trim());
-
-    stored.forEach((p)=>{
-      if (existingTitles.includes(p.title.trim())) {
-        return;
-      }
-
-      const div = document.createElement('div');
-      div.className = 'project-card';
-      
-      let buttonsHtml = '';
-      
-      if (p.files && p.files.blend) {
-        buttonsHtml += `
-          <button onclick="downloadFile('${p.files.blend.data}', '${p.files.blend.name}')" 
-                  class="btn ghost" style="margin-right:8px;margin-bottom:8px">
-            📁 Télécharger Blender
-          </button>
-        `;
-      }
-      
-      if (p.files && p.files.image) {
-        buttonsHtml += `
-          <button onclick="downloadFile('${p.files.image.data}', '${p.files.image.name}')" 
-                  class="btn ghost" style="margin-right:8px;margin-bottom:8px">
-            🖼 Télécharger Image
-          </button>
-        `;
-      }
-      
-      if (p.files && p.files.video) {
-        buttonsHtml += `
-          <button onclick="downloadFile('${p.files.video.data}', '${p.files.video.name}')" 
-                  class="btn ghost" style="margin-right:8px;margin-bottom:8px">
-            🎬 Télécharger Vidéo
-          </button>
-        `;
-      }
-      
-      if (!buttonsHtml) {
-        buttonsHtml = '<p class="muted" style="font-size:0.9rem">Aucun fichier disponible</p>';
-      }
-      
-      div.innerHTML = `
-        <h3 style="color:var(--accent1);margin-bottom:8px">${escapeHtml(p.title)}</h3>
-        <p style="margin-bottom:12px;color:var(--muted)">${escapeHtml(p.desc)}</p>
-        <div style="margin-top:12px">
-          ${buttonsHtml}
+  <main class="wrap">
+    <section class="card intro reveal">
+      <div class="profile">
+        <img src="photo.jpg" alt="photo manar" />
+      </div>
+      <div class="bio">
+        <h2>À propos</h2>
+        <p>Je m'appelle <strong>Ghemra Manar</strong>, née le <strong>22/08/2003</strong>. Étudiante en <em>Master 1 Ingénierie des Données et Technologies Web</em>. Passionnée par le développement web, IA et expériences utilisateurs élégantes.</p>
+        <div class="contact-row">
+          <a href="mailto:ghemramanar8@gmail.com" class="link">✉ ghemramanar8@gmail.com</a>
+          <span class="sep">•</span>
+          <a href="tel:+213779532854" class="link">📞 0779 53 28 54</a>
+          <span class="sep">•</span>
+          <span class="muted">📍 Sétif, Algérie</span>
         </div>
-      `;
-      container.appendChild(div);
-    });
-  } catch(e){
-    console.error('Erreur lors du chargement des projets depuis IndexedDB', e);
-  }
-}
+      </div>
+    </section>
 
-// Améliorer l'expérience de téléchargement
-function enhanceDownloadLinks() {
-  // Ajouter des écouteurs d'événements pour les liens de téléchargement
-  const downloadLinks = document.querySelectorAll('a[download]');
-  downloadLinks.forEach(link => {
-    link.addEventListener('click', function(e) {
-      console.log('Téléchargement initié:', this.href);
-    });
-    
-    link.addEventListener('contextmenu', function(e) {
-      console.log('Clic droit sur le lien de téléchargement');
-    });
-  });
-}
+    <section class="card reveal">
+      <h2 class="section-title">Formation</h2>
+      <ul class="list">
+        <li><strong>2024 – 2025 :</strong> Master 1 — Ingénierie des Données et Technologies Web, Université Ferhat Abbas Sétif 1</li>
+        <li><strong>2021 – 2024 :</strong> Licence en Mathématiques et Informatique — Université Ferhat Abbas Sétif 1</li>
+      </ul>
+    </section>
 
-// Initialiser la page
-document.addEventListener('DOMContentLoaded', function(){
-  appendStoredProjects();
-  setupActions();
-  revealOnScroll();
-  enhanceDownloadLinks();
-  
-  window.addEventListener('scroll', revealOnScroll);
-  
-  // Message de débogage
-  console.log('Portfolio chargé - TP1 prêt au téléchargement');
-  console.log('Fichiers disponibles:', {
-    blender: 'tp 01.blend',
-    image: 'tp1.jpg'
-  });
-});
+    <section class="card reveal">
+      <h2 class="section-title">Expériences</h2>
+      <ul class="list">
+        <li>Stage d'un mois en enseignement d'informatique (niveau CEM)</li>
+      </ul>
+    </section>
+
+    <section class="card reveal" id="projects-section">
+      <h2 class="section-title">Projets récents</h2>
+      <div id="project-list" class="projects-grid">
+        <!-- Projet TP 1 avec liens directs -->
+        <div class="project-card">
+          <h3>TP 1 - Modélisation 3D</h3>
+          <p>Projet de conception et modélisation 3D avec Blender - Création d'un environnement architectural complexe.</p>
+          <div style="margin-top: 12px; display: flex; gap: 10px; flex-wrap: wrap;">
+            <a href="tp 01.blend" class="btn ghost" download="TP 01 - Manar Ghemra.blend">
+              📁 Télécharger TP 01.blend
+            </a>
+            <a href="tp1.jpg" class="btn ghost" download="TP1 Preview - Manar Ghemra.jpg">
+              🖼 Télécharger tp1.jpg
+            </a>
+          </div>
+          <p style="font-size: 0.8rem; color: var(--muted); margin-top: 8px;">
+            Si le téléchargement ne fonctionne pas, clique droit → "Enregistrer le lien sous"
+          </p>
+        </div>
+
+        <!-- Projets statiques (originaux) -->
+        <div class="project-card">
+          <h3>Chatbot universitaire</h3>
+          <p>Répond aux questions concernant la faculté.</p>
+          <a href="#" target="_blank" class="btn ghost">Voir le projet</a>
+        </div>
+        <div class="project-card">
+          <h3>API REST avec FastAPI</h3>
+          <p>Fusion de plusieurs fichiers PDF.</p>
+          <a href="#" target="_blank" class="btn ghost">Voir le projet</a>
+        </div>
+        <div class="project-card">
+          <h3>Site web de shopping</h3>
+          <p>Produits féminins.</p>
+          <a href="#" target="_blank" class="btn ghost">Voir le projet</a>
+        </div>
+        <div class="project-card">
+          <h3>Site web de prévisions météorologiques</h3>
+          <p>Météo en temps réel.</p>
+          <a href="#" target="_blank" class="btn ghost">Voir le projet</a>
+        </div>
+        <div class="project-card">
+          <h3>Site scientifique sur l'espace</h3>
+          <p>Vulgarisation des découvertes spatiales.</p>
+          <a href="#" target="_blank" class="btn ghost">Voir le projet</a>
+        </div>
+        <div class="project-card">
+          <h3>Portfolio personnel</h3>
+          <p>Mon site web moderne et responsive présentant mes projets et compétences.</p>
+          <a href="https://moccasin-issi-75.tiiny.site/" target="_blank" class="btn ghost">Voir le projet</a>
+        </div>
+        <!-- Les projets dynamiques seront ajoutés ici via js.js -->
+      </div>
+    </section>
+
+    <section class="card reveal">
+      <h2 class="section-title">Compétences</h2>
+      <div class="chips">
+        <span>C++</span><span>Java</span><span>Python</span><span>HTML</span><span>CSS</span><span>JavaScript</span>
+        <span>FastAPI</span><span>Flask</span><span>MySQL</span><span>Oracle</span><span>Git</span><span>VS Code</span>
+        <span>Blender</span><span>Modélisation 3D</span>
+      </div>
+    </section>
+
+    <section class="card reveal">
+      <h2 class="section-title">Activités & Langues</h2>
+      <p><strong>Activités :</strong> Membre & organisatrice du Sétifian Scientific Club (SESC)</p>
+      <p><strong>Langues :</strong> Arabe (natif), Français (bien), Anglais (intermédiaire)</p>
+    </section>
+
+    <section class="card contact-card reveal no-print">
+      <h2 class="section-title">Contact</h2>
+      <p>Envoyer un message directement (ouvre votre client mail).</p>
+      <div class="contact-actions">
+        <a class="btn" href="mailto:ghemramanar8@gmail.com?subject=Contact%20via%20Portfolio">✉ Envoyer un mail</a>
+        <button class="btn ghost" id="printBtn">🖨 Imprimer / Enregistrer en PDF</button>
+      </div>
+    </section>
+  </main>
+
+  <footer class="foot">
+    <p>© 2025 — <strong>Ghemra Manar</strong> • Portfolio</p>
+  </footer>
+
+  <script src="js.js"></script>
+
+</body>
+</html>
