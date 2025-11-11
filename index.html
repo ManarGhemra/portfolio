@@ -5,81 +5,126 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Portfolio — Ghemra Manar</title>
   <link rel="stylesheet" href="css.css" />
-  <!-- Firebase -->
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
-    import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-analytics.js";
-    import { getFirestore, collection, getDocs, query, orderBy } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js";
-    import { getStorage, ref, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-storage.js";
-
-    const firebaseConfig = {
-      apiKey: "AIzaSyCYhzsMUJX7Q7Zk58R28CS-8KZmZCdgrO4",
-      authDomain: "portfolio-manar-ghemra.firebaseapp.com",
-      projectId: "portfolio-manar-ghemra",
-      storageBucket: "portfolio-manar-ghemra.appspot.com",
-      messagingSenderId: "644022946013",
-      appId: "1:644022946013:web:5465337e7d0f9546953334",
-      measurementId: "G-6KJH3DTF6D"
-    };
-
-    const app = initializeApp(firebaseConfig);
-    const analytics = getAnalytics(app);
-    const db = getFirestore(app);
-    const storage = getStorage(app);
-
-    async function fetchProjects() {
-      const container = document.getElementById('project-list');
-      if (!container) return;
-      container.innerHTML = '';
-
-      const q = query(collection(db, "projects"), orderBy("date", "desc"));
-      const snapshot = await getDocs(q);
-
-      snapshot.forEach(async doc => {
-        const data = doc.data();
-        const div = document.createElement('div');
-        div.className = 'project-card';
-
-        let buttonsHtml = '';
-
-        if (data.files) {
-          if (data.files.blend) {
-            const url = await getDownloadURL(ref(storage, data.files.blend));
-            buttonsHtml += `<a href="${url}" target="_blank" class="btn ghost" style="margin-right:8px;margin-bottom:8px">📁 Télécharger Blender</a>`;
-          }
-          if (data.files.image) {
-            const url = await getDownloadURL(ref(storage, data.files.image));
-            buttonsHtml += `<a href="${url}" target="_blank" class="btn ghost" style="margin-right:8px;margin-bottom:8px">🖼 Télécharger Image</a>`;
-          }
-          if (data.files.video) {
-            const url = await getDownloadURL(ref(storage, data.files.video));
-            buttonsHtml += `<a href="${url}" target="_blank" class="btn ghost" style="margin-right:8px;margin-bottom:8px">🎬 Télécharger Vidéo</a>`;
-          }
-        }
-
-        div.innerHTML = `
-          <h3 style="color:var(--accent1);margin-bottom:8px">${data.title}</h3>
-          <p style="margin-bottom:12px;color:var(--muted)">${data.desc}</p>
-          <div style="margin-top:12px">
-            ${buttonsHtml || '<p class="muted">Aucun fichier disponible</p>'}
-          </div>
-        `;
-        container.appendChild(div);
-      });
-    }
-
-    document.addEventListener('DOMContentLoaded', () => {
-      fetchProjects();
-      setupActions();
-      revealOnScroll();
-      window.addEventListener('scroll', revealOnScroll);
-    });
-
-    window.fetchProjects = fetchProjects; // si besoin للوصول من js.js
-  </script>
 </head>
 <body>
-<!-- كل شيء يبقى كما هو -->
-<script src="js.js"></script>
+  <!-- Neon animated background -->
+  <div class="bg">
+    <div class="blob b1"></div>
+    <div class="blob b2"></div>
+    <div class="grid-glow"></div>
+  </div>
+
+  <header class="top">
+    <div class="top-left">
+      <h1 class="name">Ghemra <span>Manar</span></h1>
+      <p class="role">Développeuse Web • Ingénierie des Données</p>
+    </div>
+    <div class="top-right no-print">
+      <button class="btn ghost" onclick="window.location='admin.html'">🔒 Admin</button>
+      <button class="btn" id="downloadBtn">⬇️ Télécharger CV</button>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <section class="card intro reveal">
+      <div class="profile">
+        <img src="photo.jpg" alt="photo manar" />
+      </div>
+      <div class="bio">
+        <h2>À propos</h2>
+        <p>Je m'appelle <strong>Ghemra Manar</strong>, née le <strong>22/08/2003</strong>. Étudiante en <em>Master 1 Ingénierie des Données et Technologies Web</em>. Passionnée par le développement web, IA et expériences utilisateurs élégantes.</p>
+        <div class="contact-row">
+          <a href="mailto:ghemramanar8@gmail.com" class="link">✉ ghemramanar8@gmail.com</a>
+          <span class="sep">•</span>
+          <a href="tel:+213779532854" class="link">📞 0779 53 28 54</a>
+          <span class="sep">•</span>
+          <span class="muted">📍 Sétif, Algérie</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="card reveal">
+      <h2 class="section-title">Formation</h2>
+      <ul class="list">
+        <li><strong>2024 – 2025 :</strong> Master 1 — Ingénierie des Données et Technologies Web, Université Ferhat Abbas Sétif 1</li>
+        <li><strong>2021 – 2024 :</strong> Licence en Mathématiques et Informatique — Université Ferhat Abbas Sétif 1</li>
+      </ul>
+    </section>
+
+    <section class="card reveal">
+      <h2 class="section-title">Expériences</h2>
+      <ul class="list">
+        <li>Stage d'un mois en enseignement d'informatique (niveau CEM)</li>
+      </ul>
+    </section>
+
+    <section class="card reveal" id="projects-section">
+      <h2 class="section-title">Projets récents</h2>
+      <div id="project-list" class="projects-grid">
+        <!-- Projets statiques (originaux) -->
+        <div class="project-card">
+          <h3>Chatbot universitaire</h3>
+          <p>Répond aux questions concernant la faculté.</p>
+          <a href="#" target="_blank" class="btn ghost">Voir le projet</a>
+        </div>
+        <div class="project-card">
+          <h3>API REST avec FastAPI</h3>
+          <p>Fusion de plusieurs fichiers PDF.</p>
+          <a href="#" target="_blank" class="btn ghost">Voir le projet</a>
+        </div>
+        <div class="project-card">
+          <h3>Site web de shopping</h3>
+          <p>Produits féminins.</p>
+          <a href="#" target="_blank" class="btn ghost">Voir le projet</a>
+        </div>
+        <div class="project-card">
+          <h3>Site web de prévisions météorologiques</h3>
+          <p>Météo en temps réel.</p>
+          <a href="#" target="_blank" class="btn ghost">Voir le projet</a>
+        </div>
+        <div class="project-card">
+          <h3>Site scientifique sur l'espace</h3>
+          <p>Vulgarisation des découvertes spatiales.</p>
+          <a href="#" target="_blank" class="btn ghost">Voir le projet</a>
+        </div>
+        <div class="project-card">
+          <h3>Portfolio personnel</h3>
+          <p>Mon site web moderne et responsive présentant mes projets et compétences.</p>
+          <a href="https://moccasin-issi-75.tiiny.site/" target="_blank" class="btn ghost">Voir le projet</a>
+        </div>
+        <!-- Les projets dynamiques seront ajoutés ici via js.js -->
+      </div>
+    </section>
+
+    <section class="card reveal">
+      <h2 class="section-title">Compétences</h2>
+      <div class="chips">
+        <span>C++</span><span>Java</span><span>Python</span><span>HTML</span><span>CSS</span><span>JavaScript</span>
+        <span>FastAPI</span><span>Flask</span><span>MySQL</span><span>Oracle</span><span>Git</span><span>VS Code</span>
+      </div>
+    </section>
+
+    <section class="card reveal">
+      <h2 class="section-title">Activités & Langues</h2>
+      <p><strong>Activités :</strong> Membre & organisatrice du Sétifian Scientific Club (SESC)</p>
+      <p><strong>Langues :</strong> Arabe (natif), Français (bien), Anglais (intermédiaire)</p>
+    </section>
+
+    <section class="card contact-card reveal no-print">
+      <h2 class="section-title">Contact</h2>
+      <p>Envoyer un message directement (ouvre votre client mail).</p>
+      <div class="contact-actions">
+        <a class="btn" href="mailto:ghemramanar8@gmail.com?subject=Contact%20via%20Portfolio">✉ Envoyer un mail</a>
+        <button class="btn ghost" id="printBtn">🖨 Imprimer / Enregistrer en PDF</button>
+      </div>
+    </section>
+  </main>
+
+  <footer class="foot">
+    <p>© 2025 — <strong>Ghemra Manar</strong> • Portfolio</p>
+  </footer>
+
+  <script src="js.js"></script>
+
 </body>
 </html>
