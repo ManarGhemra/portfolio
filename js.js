@@ -51,7 +51,8 @@ function setupActions(){
 
 // Buttons TP1
 function downloadTP1Blender(){
-    downloadFile('TP 01 - Manar Ghemra.blend', FILE_URLS.TP_BLEND);
+    downloadFileFromGitHub('TP 01 - Manar Ghemra.blend',
+        'https://raw.githubusercontent.com/ManarGhemra/portfolio/main/tp%2001%20.blend');
 }
 
 function downloadTP1Image(){
