@@ -17,6 +17,26 @@ function revealOnScroll(){
   });
 }
 
+// Fonction pour télécharger un fichier depuis GitHub directement
+async function downloadFileFromGitHub(filename, fileUrl){
+    try {
+        const response = await fetch(fileUrl);
+        if(!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
+        const blob = await response.blob();
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(a.href); // libère la mémoire
+    } catch(e){
+        console.error(`Erreur téléchargement ${filename}:`, e);
+        alert(`Impossible de télécharger ${filename}. Vérifie l'URL ou la disponibilité du fichier.`);
+    }
+}
+
+// Setup des boutons
 function setupActions(){
   const printBtn = document.getElementById('printBtn');
   const downloadBtn = document.getElementById('downloadBtn');
@@ -24,30 +44,20 @@ function setupActions(){
   if(downloadBtn){
     downloadBtn.addEventListener('click', ()=>{
       const url = `https://raw.githubusercontent.com/${GITHUB_USERNAME}/${GITHUB_REPO}/${GITHUB_BRANCH}/CV-ManarGhemra.pdf`;
-      downloadFile('CV-ManarGhemra.pdf', url);
+      downloadFileFromGitHub('CV-ManarGhemra.pdf', url);
     });
   }
 }
 
-// Fonction générale pour télécharger un fichier
-function downloadFile(filename, fileUrl){
-  const a = document.createElement('a');
-  a.href = fileUrl;
-  a.download = filename; // <-- garantit le téléchargement
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-}
-
 // Buttons TP1
 function downloadTP1Blender(){
-  const fileUrl = `https://raw.githubusercontent.com/${GITHUB_USERNAME}/${GITHUB_REPO}/${GITHUB_BRANCH}/tp%2001.blend`;
-  downloadFile('TP 01 - Manar Ghemra.blend', fileUrl);
+    const fileUrl = `https://raw.githubusercontent.com/${GITHUB_USERNAME}/${GITHUB_REPO}/${GITHUB_BRANCH}/tp%2001.blend`;
+    downloadFileFromGitHub('TP 01 - Manar Ghemra.blend', fileUrl);
 }
 
 function downloadTP1Image(){
-  const fileUrl = `https://raw.githubusercontent.com/${GITHUB_USERNAME}/${GITHUB_REPO}/${GITHUB_BRANCH}/tp1.png`;
-  downloadFile('TP1 Preview - Manar Ghemra.png', fileUrl);
+    const fileUrl = `https://raw.githubusercontent.com/${GITHUB_USERNAME}/${GITHUB_REPO}/${GITHUB_BRANCH}/tp1.png`;
+    downloadFileFromGitHub('TP1 Preview - Manar Ghemra.png', fileUrl);
 }
 
 // Ajouter les styles CSS pour animations
@@ -121,6 +131,7 @@ async function appendStoredProjects(){
 // Vérifier disponibilité fichiers (facultatif)
 async function checkFilesAvailability() {
   const files = [
+    { name: 'CV-ManarGhemra.pdf', url: `https://raw.githubusercontent.com/${GITHUB_USERNAME}/${GITHUB_REPO}/${GITHUB_BRANCH}/CV-ManarGhemra.pdf` },
     { name: 'tp 01.blend', url: `https://raw.githubusercontent.com/${GITHUB_USERNAME}/${GITHUB_REPO}/${GITHUB_BRANCH}/tp%2001.blend` },
     { name: 'tp1.png', url: `https://raw.githubusercontent.com/${GITHUB_USERNAME}/${GITHUB_REPO}/${GITHUB_BRANCH}/tp1.png` }
   ];
