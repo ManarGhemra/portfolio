@@ -1,4 +1,4 @@
-// Configuration - REMPLACEZ CES VALEURS
+// Configuration
 const GITHUB_USERNAME = 'ManarGhemra';
 const GITHUB_REPO = 'portfolio';
 const GITHUB_BRANCH = 'main';
@@ -23,7 +23,6 @@ function setupActions(){
   if(printBtn) printBtn.addEventListener('click', ()=> window.print());
   if(downloadBtn){
     downloadBtn.addEventListener('click', ()=>{
-      // Remplace par ton fichier CV
       const url = `https://raw.githubusercontent.com/${GITHUB_USERNAME}/${GITHUB_REPO}/${GITHUB_BRANCH}/CV-ManarGhemra.pdf`;
       downloadFile('CV-ManarGhemra.pdf', url);
     });
@@ -47,8 +46,8 @@ function downloadTP1Blender(){
 }
 
 function downloadTP1Image(){
-  const fileUrl = `https://raw.githubusercontent.com/${GITHUB_USERNAME}/${GITHUB_REPO}/${GITHUB_BRANCH}/tp1.jpg`;
-  downloadFile('TP1 Preview - Manar Ghemra.jpg', fileUrl);
+  const fileUrl = `https://raw.githubusercontent.com/${GITHUB_USERNAME}/${GITHUB_REPO}/${GITHUB_BRANCH}/tp1.png`;
+  downloadFile('TP1 Preview - Manar Ghemra.png', fileUrl);
 }
 
 // Ajouter les styles CSS pour animations
@@ -68,87 +67,83 @@ function addDownloadStyles() {
   document.head.appendChild(style);
 }
 
-// IndexedDB pour projets (inchangé)
+// IndexedDB pour projets
 function initDB() {
-    return new Promise((resolve, reject) => {
-        const request = indexedDB.open('PortfolioDB', 1);
-        request.onerror = () => reject(request.error);
-        request.onsuccess = () => resolve(request.result);
-        request.onupgradeneeded = (event) => {
-            const database = event.target.result;
-            if (!database.objectStoreNames.contains('projects')) {
-                const store = database.createObjectStore('projects', { keyPath: 'id', autoIncrement: true });
-                store.createIndex('title', 'title', { unique: false });
-            }
-        };
-    });
+  return new Promise((resolve, reject) => {
+    const request = indexedDB.open('PortfolioDB', 1);
+    request.onerror = () => reject(request.error);
+    request.onsuccess = () => resolve(request.result);
+    request.onupgradeneeded = (event) => {
+      const db = event.target.result;
+      if (!db.objectStoreNames.contains('projects')) {
+        const store = db.createObjectStore('projects', { keyPath: 'id', autoIncrement: true });
+        store.createIndex('title', 'title', { unique: false });
+      }
+    };
+  });
 }
 
 function getAllProjects() {
-    return new Promise((resolve, reject) => {
-        const request = indexedDB.open('PortfolioDB', 1);
-        request.onerror = () => reject(request.error);
-        request.onsuccess = () => {
-            const db = request.result;
-            const transaction = db.transaction(['projects'], 'readonly');
-            const store = transaction.objectStore('projects');
-            const getAllRequest = store.getAll();
-            getAllRequest.onsuccess = () => resolve(getAllRequest.result);
-            getAllRequest.onerror = () => reject(getAllRequest.error);
-        };
-    });
+  return new Promise((resolve, reject) => {
+    const request = indexedDB.open('PortfolioDB', 1);
+    request.onerror = () => reject(request.error);
+    request.onsuccess = () => {
+      const db = request.result;
+      const transaction = db.transaction(['projects'], 'readonly');
+      const store = transaction.objectStore('projects');
+      const getAllRequest = store.getAll();
+      getAllRequest.onsuccess = () => resolve(getAllRequest.result);
+      getAllRequest.onerror = () => reject(getAllRequest.error);
+    };
+  });
 }
 
 async function appendStoredProjects(){
-    try {
-        await initDB();
-        const stored = await getAllProjects();
-        const container = document.getElementById('project-list');
-        
-        if(!container || stored.length === 0) return;
-
-        stored.forEach((p)=>{
-            const div = document.createElement('div');
-            div.className = 'project-card';
-            div.innerHTML = `
-                <h3 style="color:var(--accent1);margin-bottom:8px">${escapeHtml(p.title)}</h3>
-                <p style="margin-bottom:12px;color:var(--muted)">${escapeHtml(p.desc)}</p>
-            `;
-            container.appendChild(div);
-        });
-    } catch(e){
-        console.error('Erreur IndexedDB:', e);
-    }
+  try {
+    await initDB();
+    const stored = await getAllProjects();
+    const container = document.getElementById('project-list');
+    if(!container || stored.length === 0) return;
+    stored.forEach((p)=>{
+      const div = document.createElement('div');
+      div.className = 'project-card';
+      div.innerHTML = `
+        <h3 style="color:var(--accent1);margin-bottom:8px">${escapeHtml(p.title)}</h3>
+        <p style="margin-bottom:12px;color:var(--muted)">${escapeHtml(p.desc)}</p>
+      `;
+      container.appendChild(div);
+    });
+  } catch(e){
+    console.error('Erreur IndexedDB:', e);
+  }
 }
 
 // Vérifier disponibilité fichiers (facultatif)
 async function checkFilesAvailability() {
-    const files = [
-        { name: 'tp 01.blend', url: `https://raw.githubusercontent.com/${GITHUB_USERNAME}/${GITHUB_REPO}/${GITHUB_BRANCH}/tp%2001.blend` },
-        { name: 'tp1.jpg', url: `https://raw.githubusercontent.com/${GITHUB_USERNAME}/${GITHUB_REPO}/${GITHUB_BRANCH}/tp1.jpg` }
-    ];
-    
-    console.group('🔍 Vérification des fichiers sur GitHub');
-    for (const file of files) {
-        try {
-            const response = await fetch(file.url, { method: 'HEAD' });
-            if (response.ok) console.log(`✅ ${file.name} - DISPONIBLE`);
-            else console.warn(`❌ ${file.name} - NON DISPONIBLE (${response.status})`);
-        } catch (error) {
-            console.error(`❌ ${file.name} - ERREUR:`, error.message);
-        }
+  const files = [
+    { name: 'tp 01.blend', url: `https://raw.githubusercontent.com/${GITHUB_USERNAME}/${GITHUB_REPO}/${GITHUB_BRANCH}/tp%2001.blend` },
+    { name: 'tp1.png', url: `https://raw.githubusercontent.com/${GITHUB_USERNAME}/${GITHUB_REPO}/${GITHUB_BRANCH}/tp1.png` }
+  ];
+  console.group('🔍 Vérification des fichiers sur GitHub');
+  for (const file of files) {
+    try {
+      const response = await fetch(file.url, { method: 'HEAD' });
+      if (response.ok) console.log(`✅ ${file.name} - DISPONIBLE`);
+      else console.warn(`❌ ${file.name} - NON DISPONIBLE (${response.status})`);
+    } catch (error) {
+      console.error(`❌ ${file.name} - ERREUR:`, error.message);
     }
-    console.groupEnd();
+  }
+  console.groupEnd();
 }
 
 // Initialisation
 document.addEventListener('DOMContentLoaded', function(){
-    addDownloadStyles();
-    setupActions();
-    revealOnScroll();
-    appendStoredProjects();
-    checkFilesAvailability();
-    window.addEventListener('scroll', revealOnScroll);
-    
-    console.log('🚀 Portfolio chargé - GitHub Raw URLs activés');
+  addDownloadStyles();
+  setupActions();
+  revealOnScroll();
+  appendStoredProjects();
+  checkFilesAvailability();
+  window.addEventListener('scroll', revealOnScroll);
+  console.log('🚀 Portfolio chargé - GitHub Raw URLs activés');
 });
