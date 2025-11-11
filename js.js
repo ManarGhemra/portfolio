@@ -1,12 +1,11 @@
-// GitHub Raw URLs — عدل حسب المستودع والملفات
+// GitHub Releases URLs — عدّل حسب المستودع والملفات
 const FILE_URLS = {
     CV: 'https://raw.githubusercontent.com/ManarGhemra/portfolio/main/CV-ManarGhemra.pdf',
-    TP_BLEND: 'https://github.com/ManarGhemra/portfolio/releases/download/v1.0/tp.01.blend'
+    TP_BLEND: 'https://github.com/ManarGhemra/portfolio/releases/download/v1.0/tp.01.blend',
     TP_IMAGE: 'https://github.com/ManarGhemra/portfolio/releases/download/v1.0/tp1.png'
 };
 
-
-
+// Fonction pour échapper HTML
 function escapeHtml(s){
   if(!s) return '';
   return s.replace(/[&<>"']/g, m => ({
@@ -14,6 +13,7 @@ function escapeHtml(s){
   }[m]));
 }
 
+// Animation reveal au scroll
 function revealOnScroll(){
   document.querySelectorAll('.reveal').forEach(el=>{
     const r = el.getBoundingClientRect();
@@ -21,46 +21,37 @@ function revealOnScroll(){
   });
 }
 
-// Fonction pour télécharger un fichier depuis GitHub
-async function downloadFile(filename, fileUrl){
-    try {
-        const response = await fetch(fileUrl);
-        if(!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
-        const blob = await response.blob();
-        const a = document.createElement('a');
-        a.href = URL.createObjectURL(blob);
-        a.download = filename;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(a.href);
-    } catch(e){
-        console.error(`Erreur téléchargement ${filename}:`, e);
-        alert(`Impossible de télécharger ${filename}. Vérifie le lien ou le fichier.`);
-    }
+// Fonction pour télécharger un fichier via redirection
+function downloadFileDirect(filename, fileUrl){
+    const a = document.createElement('a');
+    a.href = fileUrl;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
 }
 
 // Setup des boutons
 function setupActions(){
   const printBtn = document.getElementById('printBtn');
   const downloadBtn = document.getElementById('downloadBtn');
+
   if(printBtn) printBtn.addEventListener('click', ()=> window.print());
   if(downloadBtn){
-    downloadBtn.addEventListener('click', ()=> downloadFile('CV-ManarGhemra.pdf', FILE_URLS.CV));
+    downloadBtn.addEventListener('click', ()=> downloadFileDirect('CV-ManarGhemra.pdf', FILE_URLS.CV));
   }
 }
 
 // Buttons TP1
 function downloadTP1Blender(){
-    downloadFileFromGitHub('TP 01 - Manar Ghemra.blend',
-        'https://raw.githubusercontent.com/ManarGhemra/portfolio/main/tp%2001%20.blend');
+    downloadFileDirect('TP 01 - Manar Ghemra.blend', FILE_URLS.TP_BLEND);
 }
 
 function downloadTP1Image(){
-    downloadFile('TP1 Preview - Manar Ghemra.jpg', FILE_URLS.TP_IMAGE);
+    downloadFileDirect('TP1 Preview - Manar Ghemra.png', FILE_URLS.TP_IMAGE);
 }
 
-// Ajouter les styles CSS pour animations
+// Ajouter styles CSS pour animations
 function addDownloadStyles() {
   const style = document.createElement('style');
   style.textContent = `
@@ -135,5 +126,5 @@ document.addEventListener('DOMContentLoaded', function(){
   revealOnScroll();
   appendStoredProjects();
   window.addEventListener('scroll', revealOnScroll);
-  console.log('🚀 Portfolio chargé — GitHub Raw URLs activés');
+  console.log('🚀 Portfolio chargé — GitHub Releases ready pour téléchargement');
 });
