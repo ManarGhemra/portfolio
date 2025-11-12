@@ -27,8 +27,6 @@ async function downloadFile(filename, fileUrl){
         // Méthode 1: Essayer avec fetch d'abord
         try {
             const response = await fetch(fileUrl);
-            console.log("*****************************")
-            console.log(response)
             if(response.ok) {
                 const blob = await response.blob();
                 if (blob.size > 0) {
