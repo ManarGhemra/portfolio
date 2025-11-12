@@ -80,11 +80,18 @@ async function downloadTP2File(url, filename){
         document.body.removeChild(link);
         URL.revokeObjectURL(link.href);
     } catch(e){
-        console.error(e);
-        alert(`Le téléchargement de "${filename}" a échoué. Essayez d’ouvrir le lien dans un nouvel onglet.`);
-        window.open(url,'_blank');
+        // حذف alert والفشل
+        console.warn(`Téléchargement direct impossible, ouverture du lien en fallback.`);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = filename;
+        link.style.display = 'none';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
     }
 }
+
 
 // TP2 spécifiques
 function downloadTP2Blend() { downloadTP2File(FILE_URLS_TP2.BLEND, 'room.blend'); }
