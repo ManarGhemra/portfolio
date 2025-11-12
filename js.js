@@ -92,9 +92,17 @@ async function downloadTP2File(url, filename){
     }
 }
 
-
 // TP2 spécifiques
-function downloadTP2Blend() { downloadTP2File(FILE_URLS_TP2.BLEND, 'room.blend'); }
+// ===> تعديل دالة downloadTP2Blend فقط
+function downloadTP2Blend() {
+    const link = document.createElement('a');
+    link.href = FILE_URLS_TP2.BLEND; // رابط GitHub release
+    link.download = 'room.blend'; // اسم الملف
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+}
+
 function downloadTP2PDF() { downloadTP2File(FILE_URLS_TP2.PDF, 'Rapport TP1 Ghemra Manar.pdf'); }
 function downloadTP2Image() { downloadTP2File(FILE_URLS_TP2.IMAGE, 'render.image.room.jpg'); }
 function downloadTP2Video() { downloadTP2File(FILE_URLS_TP2.VIDEO, 'video.mp4'); }
