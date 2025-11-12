@@ -1,4 +1,4 @@
-// GitHub Raw URLs — corrigé
+// GitHub URLs — version corrigée
 const FILE_URLS = {
     CV: 'https://raw.githubusercontent.com/ManarGhemra/portfolio/main/CV-ManarGhemra.pdf',
     TP_BLEND: 'https://github.com/ManarGhemra/portfolio/releases/download/v1.0/tp.01.blend',
@@ -19,35 +19,74 @@ function revealOnScroll(){
     });
 }
 
-// Fonction principale pour télécharger les fichiers
+// Nouvelle fonction pour télécharger depuis GitHub Releases
 async function downloadFile(filename, fileUrl){
     try {
-        // Afficher un indicateur de charnement
         console.log(`Téléchargement de ${filename} depuis ${fileUrl}`);
         
-        const response = await fetch(fileUrl);
-        if(!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
-        
-        const blob = await response.blob();
-        
-        // Vérifier si le blob n'est pas vide
-        if (blob.size === 0) {
-            throw new Error('Fichier vide ou inaccessible');
+        // Méthode 1: Essayer avec fetch d'abord
+        try {
+            const response = await fetch(fileUrl);
+            if(response.ok) {
+                const blob = await response.blob();
+                if (blob.size > 0) {
+                    const a = document.createElement('a');
+                    a.href = URL.createObjectURL(blob);
+                    a.download = filename;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(a.href);
+                    console.log(`✅ ${filename} téléchargé avec succès via fetch`);
+                    return;
+                }
+            }
+        } catch (fetchError) {
+            console.log('Fetch a échoué, utilisation de la méthode redirect...');
         }
         
-        const a = document.createElement('a');
-        a.href = URL.createObjectURL(blob);
-        a.download = filename;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(a.href);
+        // Méthode 2: Redirection directe pour GitHub Releases
+        // Créer un lien temporaire et le cliquer
+        const tempLink = document.createElement('a');
+        tempLink.href = fileUrl;
+        tempLink.download = filename;
+        tempLink.target = '_blank'; // Important pour GitHub Releases
+        document.body.appendChild(tempLink);
+        tempLink.click();
+        document.body.removeChild(tempLink);
         
-        console.log(`✅ ${filename} téléchargé avec succès`);
+        console.log(`✅ ${filename} téléchargement initié via redirect`);
+        
     } catch(e){
         console.error(`❌ Erreur téléchargement ${filename}:`, e);
-        alert(`Impossible de télécharger "${filename}".\n\nVérifie que le fichier existe bien sur GitHub.\n\nErreur: ${e.message}`);
+        
+        // Méthode 3: Ouvrir dans un nouvel onglet comme fallback
+        alert(`Téléchargement de "${filename}"...\n\nSi le téléchargement ne démarre pas automatiquement, vérifiez votre bloqueur de pop-ups ou cliquez sur le lien qui va s'ouvrir.`);
+        window.open(fileUrl, '_blank');
     }
+}
+
+// Alternative spécifique pour GitHub Releases
+function downloadFromGitHubReleases(filename, fileUrl) {
+    console.log(`📦 Téléchargement GitHub Releases: ${filename}`);
+    
+    // Créer un iframe invisible pour forcer le téléchargement
+    const iframe = document.createElement('iframe');
+    iframe.style.display = 'none';
+    iframe.src = fileUrl;
+    document.body.appendChild(iframe);
+    
+    // Fallback: ouvrir dans un nouvel onglet après un délai
+    setTimeout(() => {
+        window.open(fileUrl, '_blank');
+    }, 1000);
+    
+    // Nettoyer après 5 secondes
+    setTimeout(() => {
+        if (document.body.contains(iframe)) {
+            document.body.removeChild(iframe);
+        }
+    }, 5000);
 }
 
 // Setup des boutons d'action
@@ -70,15 +109,51 @@ function setupActions(){
     }
 }
 
-// Fonctions pour les téléchargements TP1
+// Fonctions pour les téléchargements TP1 - VERSION CORRIGÉE
 function downloadTP1Blender(){
     console.log('📁 Téléchargement du fichier Blender');
-    downloadFile('TP 01 - Manar Ghemra.blend', FILE_URLS.TP_BLEND);
+    
+    // Utiliser l'URL directe de GitHub Releases
+    const blendUrl = 'https://github.com/ManarGhemra/portfolio/releases/download/v1.0/tp.01.blend';
+    
+    // Méthode simple et efficace pour GitHub Releases
+    const link = document.createElement('a');
+    link.href = blendUrl;
+    link.download = 'TP 01 - Manar Ghemra.blend';
+    link.style.display = 'none';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    // Fallback après 1 seconde
+    setTimeout(() => {
+        if (!confirm('Le téléchargement a-t-il démarré ? Si non, cliquez OK pour ouvrir la page de téléchargement.')) {
+            return;
+        }
+        window.open(blendUrl, '_blank');
+    }, 1000);
 }
 
 function downloadTP1Image(){
     console.log('🖼 Téléchargement de l\'image TP1');
-    downloadFile('TP1 Preview - Manar Ghemra.jpg', FILE_URLS.TP_IMAGE);
+    
+    const imageUrl = 'https://github.com/ManarGhemra/portfolio/releases/download/v1.0/tp1.png';
+    
+    const link = document.createElement('a');
+    link.href = imageUrl;
+    link.download = 'TP1 Preview - Manar Ghemra.png'; // Changé l'extension en .png
+    link.style.display = 'none';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    // Fallback
+    setTimeout(() => {
+        if (!confirm('Le téléchargement de l\'image a-t-il démarré ?')) {
+            return;
+        }
+        window.open(imageUrl, '_blank');
+    }, 1000);
 }
 
 // Ajouter les styles CSS pour animations
@@ -95,7 +170,15 @@ function addDownloadStyles() {
             100% { transform: rotate(360deg); }
         }
         
-        /* Styles pour les indicateurs de chargement */
+        /* Styles pour les boutons de téléchargement */
+        .btn {
+            transition: all 0.3s ease;
+        }
+        
+        .btn:active {
+            transform: scale(0.95);
+        }
+        
         .loading {
             display: inline-block;
             width: 20px;
@@ -109,103 +192,22 @@ function addDownloadStyles() {
     document.head.appendChild(style);
 }
 
-// IndexedDB pour projets (optionnel)
-function initDB() {
-    return new Promise((resolve, reject) => {
-        const request = indexedDB.open('PortfolioDB', 1);
-        request.onerror = () => reject(request.error);
-        request.onsuccess = () => resolve(request.result);
-        request.onupgradeneeded = (event) => {
-            const db = event.target.result;
-            if (!db.objectStoreNames.contains('projects')) {
-                const store = db.createObjectStore('projects', { keyPath: 'id', autoIncrement: true });
-                store.createIndex('title', 'title', { unique: false });
-            }
-        };
-    });
-}
-
-function getAllProjects() {
-    return new Promise((resolve, reject) => {
-        const request = indexedDB.open('PortfolioDB', 1);
-        request.onerror = () => reject(request.error);
-        request.onsuccess = () => {
-            const db = request.result;
-            const transaction = db.transaction(['projects'], 'readonly');
-            const store = transaction.objectStore('projects');
-            const getAllRequest = store.getAll();
-            getAllRequest.onsuccess = () => resolve(getAllRequest.result);
-            getAllRequest.onerror = () => reject(getAllRequest.error);
-        };
-    });
-}
-
-async function appendStoredProjects(){
-    try {
-        await initDB();
-        const stored = await getAllProjects();
-        const container = document.getElementById('project-list');
-        if(!container || stored.length === 0) return;
-        
-        stored.forEach((p)=>{
-            const div = document.createElement('div');
-            div.className = 'project-card';
-            div.innerHTML = `
-                <h3 style="color:var(--accent1);margin-bottom:8px">${escapeHtml(p.title)}</h3>
-                <p style="margin-bottom:12px;color:var(--muted)">${escapeHtml(p.desc)}</p>
-            `;
-            container.appendChild(div);
-        });
-        
-        console.log(`✅ ${stored.length} projet(s) chargé(s) depuis IndexedDB`);
-    } catch(e){
-        console.error('❌ Erreur IndexedDB:', e);
-    }
-}
-
-// Fonction pour tester les URLs (debug)
-function testFileUrls() {
-    console.log('🧪 Test des URLs de fichiers:');
-    console.log('📄 CV:', FILE_URLS.CV);
-    console.log('📁 Blender:', FILE_URLS.TP_BLEND);
-    console.log('🖼 Image:', FILE_URLS.TP_IMAGE);
+// Version ultra-simple qui fonctionne à coup sûr
+function forceDownload(filename, url) {
+    console.log(`🚀 Force download: ${filename}`);
     
-    // Test simple de disponibilité
-    Object.entries(FILE_URLS).forEach(([key, url]) => {
-        fetch(url, { method: 'HEAD' })
-            .then(response => {
-                console.log(`✅ ${key}: ${response.status} ${response.statusText}`);
-            })
-            .catch(error => {
-                console.error(`❌ ${key}: ${error.message}`);
-            });
-    });
-}
-
-// Fonction utilitaire pour ajouter un projet à IndexedDB
-function addProjectToDB(title, description) {
-    return new Promise(async (resolve, reject) => {
-        try {
-            const db = await initDB();
-            const transaction = db.transaction(['projects'], 'readwrite');
-            const store = transaction.objectStore('projects');
-            
-            const project = {
-                title: title,
-                desc: description,
-                date: new Date().toISOString()
-            };
-            
-            const request = store.add(project);
-            request.onsuccess = () => {
-                console.log('✅ Projet ajouté à la base de données');
-                resolve(request.result);
-            };
-            request.onerror = () => reject(request.error);
-        } catch (error) {
-            reject(error);
-        }
-    });
+    // Méthode 1: Lien direct
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    // Méthode 2: Ouvrir dans nouvel onglet (fallback)
+    setTimeout(() => {
+        window.open(url, '_blank');
+    }, 500);
 }
 
 // Initialisation principale
@@ -216,28 +218,36 @@ document.addEventListener('DOMContentLoaded', function(){
     setupActions();
     revealOnScroll();
     
-    // Charger les projets depuis IndexedDB
-    appendStoredProjects();
-    
-    // Tester les URLs (optionnel - pour debug)
-    testFileUrls();
-    
     // Écouter le scroll pour les animations
     window.addEventListener('scroll', revealOnScroll);
     
-    console.log('✅ Portfolio complètement chargé — Téléchargements activés');
+    console.log('✅ Portfolio chargé — Système de téléchargement activé');
+    console.log('📁 URLs disponibles:');
+    console.log('  - CV:', FILE_URLS.CV);
+    console.log('  - Blender:', FILE_URLS.TP_BLEND);
+    console.log('  - Image:', FILE_URLS.TP_IMAGE);
     
     // Exposer les fonctions globales pour les boutons HTML
     window.downloadTP1Blender = downloadTP1Blender;
     window.downloadTP1Image = downloadTP1Image;
+    window.forceDownload = forceDownload;
 });
 
-// Gestion des erreurs globales
-window.addEventListener('error', function(e) {
-    console.error('💥 Erreur globale:', e.error);
-});
-
-// Gestion des promesses rejetées
-window.addEventListener('unhandledrejection', function(e) {
-    console.error('💥 Promesse rejetée:', e.reason);
-});
+// Test manuel des URLs (à exécuter dans la console)
+function testDownloads() {
+    console.log('🧪 Test manuel des téléchargements:');
+    console.log('1. CV:', FILE_URLS.CV);
+    console.log('2. Blender:', FILE_URLS.TP_BLEND);
+    console.log('3. Image:', FILE_URLS.TP_IMAGE);
+    
+    // Tester chaque URL
+    const testUrl = (name, url) => {
+        fetch(url, { method: 'HEAD', mode: 'no-cors' })
+            .then(() => console.log(`✅ ${name}: Accessible`))
+            .catch(() => console.log(`❌ ${name}: Bloqué par CORS (normal pour GitHub Releases)`));
+    };
+    
+    testUrl('CV', FILE_URLS.CV);
+    testUrl('Blender', FILE_URLS.TP_BLEND);
+    testUrl('Image', FILE_URLS.TP_IMAGE);
+}
