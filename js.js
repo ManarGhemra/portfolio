@@ -4,10 +4,10 @@
       CV: 'https://raw.githubusercontent.com/ManarGhemra/portfolio/main/CV-ManarGhemra.pdf',
       TP1_BLEND: 'https://github.com/ManarGhemra/portfolio/releases/download/v1.0/tp.01.blend',
       TP1_IMAGE: 'https://github.com/ManarGhemra/portfolio/releases/download/v1.0/tp1.png',
-      TP2_BLEND: 'https://github.com/ManarGhemra/portfolio/releases/download/v1.0/room.blend',
-      TP2_IMAGE: 'https://github.com/ManarGhemra/portfolio/releases/download/v1.0/render.image.room.jpg',
-      TP2_VIDEO: 'https://github.com/ManarGhemra/portfolio/releases/download/v1.0/video.mp4',
-      TP2_PDF: 'https://github.com/ManarGhemra/portfolio/releases/download/v1.0/Rapport_tp1_Ghemra_Manar.pdf'
+      TP2_BLEND: 'https://github.com/ManarGhemra/portfolio/releases/download/v1.1/room.blend',
+      TP2_IMAGE: 'https://github.com/ManarGhemra/portfolio/releases/download/v1.1/render.image.room.jpg',
+      TP2_VIDEO: 'https://github.com/ManarGhemra/portfolio/releases/download/v1.1/video.mp4',
+      TP2_PDF: 'https://github.com/ManarGhemra/portfolio/releases/download/v1.1/Rapport_tp1_Ghemra_Manar.pdf'
   };
 
   function escapeHtml(s){
