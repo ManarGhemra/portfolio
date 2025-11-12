@@ -3,23 +3,22 @@ const path = require('path');
 const app = express();
 const PORT = 3000;
 
-// خدمة الملفات الثابتة (HTML, CSS, JS)
-app.use(express.static(__dirname));
+// Pour servir les fichiers statiques (HTML, CSS, JS, images)
+app.use(express.static(path.join(__dirname, 'public')));
 
-// مسار تحميل الملفات
-app.get('/download/:file', (req, res) => {
-    const fileName = req.params.file;
-    const filePath = path.join(__dirname, fileName);
-
-    res.download(filePath, fileName, (err) => {
-        if (err) {
-            console.error('Erreur téléchargement:', err);
-            res.status(404).send('Fichier introuvable');
-        }
-    });
+// Route pour télécharger un fichier spécifique
+app.get('/download/:filename', (req, res) => {
+  const filename = req.params.filename;
+  const filepath = path.join(__dirname, 'public', 'fichiers', filename);
+  res.download(filepath, filename, err => {
+    if (err) {
+      console.error(err);
+      res.status(404).send('Fichier non trouvé');
+    }
+  });
 });
 
+// Lancer le serveur
 app.listen(PORT, () => {
-    console.log(`Server running on http://localhost:${PORT}`);
+  console.log(`Serveur démarré sur http://localhost:${PORT}`);
 });
-
