@@ -1,79 +1,127 @@
-// GitHub URLs — version corrigée
-const FILE_URLS = {
-    CV: 'https://raw.githubusercontent.com/ManarGhemra/portfolio/main/CV-ManarGhemra.pdf',
-    TP_BLEND: 'https://github.com/ManarGhemra/portfolio/releases/download/v1.0/tp.01.blend',
-    TP_IMAGE: 'https://github.com/ManarGhemra/portfolio/releases/download/v1.0/tp1.png',
-    // ✅ nouveaux fichiers TP2
-    TP2_BLEND: 'https://github.com/ManarGhemra/portfolio/releases/download/v1.1/room.blend',
-    TP2_IMAGE: 'https://github.com/ManarGhemra/portfolio/releases/download/v1.1/render.image.room.jpg',
-    TP2_VIDEO: 'https://github.com/ManarGhemra/portfolio/releases/download/v1.1/vedeo.mp4',
-    TP2_PDF: 'https://github.com/ManarGhemra/portfolio/releases/download/v1.1/Rapport_tp1_Ghemra_Manar.pdf'
-};
+<script>
+  // URLs corrigées pour les téléchargements
+  const FILE_URLS = {
+      CV: 'https://raw.githubusercontent.com/ManarGhemra/portfolio/main/CV-ManarGhemra.pdf',
+      TP1_BLEND: 'https://github.com/ManarGhemra/portfolio/releases/download/v1.0/tp.01.blend',
+      TP1_IMAGE: 'https://github.com/ManarGhemra/portfolio/releases/download/v1.0/tp1.png',
+      TP2_BLEND: 'https://github.com/ManarGhemra/portfolio/releases/download/v1.0/room.blend',
+      TP2_IMAGE: 'https://github.com/ManarGhemra/portfolio/releases/download/v1.0/render.image.room.jpg',
+      TP2_VIDEO: 'https://github.com/ManarGhemra/portfolio/releases/download/v1.0/video.mp4',
+      TP2_PDF: 'https://github.com/ManarGhemra/portfolio/releases/download/v1.0/Rapport_tp1_Ghemra_Manar.pdf'
+  };
 
-function escapeHtml(s){
+  function escapeHtml(s){
     if(!s) return '';
-    return s.replace(/[&<>"']/g, m => ({
-        '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
-    }[m]));
-}
+    return s.replace(/[&<>"']/g, m => ( {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m] ));
+  }
 
-function revealOnScroll(){
+  function revealOnScroll(){
     document.querySelectorAll('.reveal').forEach(el=>{
-        const r = el.getBoundingClientRect();
-        if(r.top < window.innerHeight - 80) el.classList.add('visible');
+      const r = el.getBoundingClientRect();
+      if(r.top < window.innerHeight - 80) el.classList.add('visible');
     });
-}
+  }
 
-// 🔹 Fonction simple pour téléchargement direct
-function downloadFile(filename, fileUrl) {
+  function downloadFile(filename, fileUrl) {
     try {
-        console.log(`📥 Téléchargement de ${filename} depuis ${fileUrl}`);
-        const link = document.createElement('a');
-        link.href = fileUrl;
-        link.download = filename;
-        link.target = '_blank';
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
+      const link = document.createElement('a');
+      link.href = fileUrl;
+      link.download = filename;
+      link.target = '_blank';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
     } catch (err) {
-        console.error(`Erreur:`, err);
-        window.open(fileUrl, '_blank');
+      alert('Le téléchargement a échoué. Essayez d’ouvrir le lien dans un nouvel onglet.');
+      window.open(fileUrl, '_blank');
     }
-}
+  }
 
-// ⚙️ Actions boutons
-function setupActions(){
+  function setupActions(){
     const printBtn = document.getElementById('printBtn');
     const downloadBtn = document.getElementById('downloadBtn');
     if(printBtn) printBtn.addEventListener('click', ()=> window.print());
-    if(downloadBtn) downloadBtn.addEventListener('click', ()=> downloadFile('CV-ManarGhemra.pdf', FILE_URLS.CV));
-}
+    if(downloadBtn){
+      downloadBtn.addEventListener('click', ()=> downloadFile('CV-ManarGhemra.pdf', FILE_URLS.CV));
+    }
+  }
 
-// TP1
-function downloadTP1Blender(){ downloadFile('TP 01 - Manar Ghemra.blend', FILE_URLS.TP_BLEND); }
-function downloadTP1Image(){ downloadFile('TP1 Preview - Manar Ghemra.jpg', FILE_URLS.TP_IMAGE); }
+  // TP1
+  function downloadTP1Blender(){ downloadFile('TP 01 - Manar Ghemra.blend', FILE_URLS.TP1_BLEND); }
+  function downloadTP1Image(){ downloadFile('TP1 Preview - Manar Ghemra.jpg', FILE_URLS.TP1_IMAGE); }
 
-// ✅ TP2 — nouvelles fonctions
-function downloadTP2Blender(){ downloadFile('room.blend', FILE_URLS.TP2_BLEND); }
-function downloadTP2Image(){ downloadFile('render.image.room.jpg', FILE_URLS.TP2_IMAGE); }
-function downloadTP2Video(){ downloadFile('vedeo.mp4', FILE_URLS.TP2_VIDEO); }
-function downloadTP2PDF(){ downloadFile('Rapport_tp1_Ghemra_Manar.pdf', FILE_URLS.TP2_PDF); }
+  // TP2 بنفس طريقة TP1
+  function downloadTP2Blender(){ downloadFile('Room - Manar Ghemra.blend', FILE_URLS.TP2_BLEND); }
+  function downloadTP2Image(){ downloadFile('Render Room - Manar Ghemra.jpg', FILE_URLS.TP2_IMAGE); }
+  function downloadTP2Video(){ downloadFile('Video Room - Manar Ghemra.mp4', FILE_URLS.TP2_VIDEO); }
+  function downloadTP2PDF(){ downloadFile('Rapport TP2 - Manar Ghemra.pdf', FILE_URLS.TP2_PDF); }
 
-function addDownloadStyles() {
+  function addDownloadStyles() {
     const style = document.createElement('style');
     style.textContent = `
-      @keyframes spin {
-        0% { transform: rotate(0deg); }
-        100% { transform: rotate(360deg); }
-      }
+      @keyframes slideInRight { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+      @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     `;
     document.head.appendChild(style);
-}
+  }
 
-document.addEventListener('DOMContentLoaded', function(){
+  // IndexedDB pour projets (optionnel)
+  function initDB() {
+    return new Promise((resolve, reject) => {
+      const request = indexedDB.open('PortfolioDB', 1);
+      request.onerror = () => reject(request.error);
+      request.onsuccess = () => resolve(request.result);
+      request.onupgradeneeded = (event) => {
+        const db = event.target.result;
+        if (!db.objectStoreNames.contains('projects')) {
+          const store = db.createObjectStore('projects', { keyPath: 'id', autoIncrement: true });
+          store.createIndex('title', 'title', { unique: false });
+        }
+      };
+    });
+  }
+
+  function getAllProjects() {
+    return new Promise((resolve, reject) => {
+      const request = indexedDB.open('PortfolioDB', 1);
+      request.onerror = () => reject(request.error);
+      request.onsuccess = () => {
+        const db = request.result;
+        const transaction = db.transaction(['projects'], 'readonly');
+        const store = transaction.objectStore('projects');
+        const getAllRequest = store.getAll();
+        getAllRequest.onsuccess = () => resolve(getAllRequest.result);
+        getAllRequest.onerror = () => reject(getAllRequest.error);
+      };
+    });
+  }
+
+  async function appendStoredProjects(){
+    try {
+      await initDB();
+      const stored = await getAllProjects();
+      const container = document.getElementById('project-list');
+      if(!container || stored.length === 0) return;
+      stored.forEach((p)=>{
+        const div = document.createElement('div');
+        div.className = 'project-card';
+        div.innerHTML = `
+          <h3 style="color:var(--accent1);margin-bottom:8px">${escapeHtml(p.title)}</h3>
+          <p style="margin-bottom:12px;color:var(--muted)">${escapeHtml(p.desc)}</p>
+        `;
+        container.appendChild(div);
+      });
+    } catch(e){
+      console.error('Erreur IndexedDB:', e);
+    }
+  }
+
+  document.addEventListener('DOMContentLoaded', function(){
     addDownloadStyles();
     setupActions();
     revealOnScroll();
+    appendStoredProjects();
     window.addEventListener('scroll', revealOnScroll);
-    console.log('🚀 Portfolio chargé — Téléchargements TP2 activés');
-});
+    console.log('🚀 Portfolio chargé — Téléchargements activés');
+  });
+</script>
