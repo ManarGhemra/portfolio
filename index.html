@@ -153,23 +153,45 @@
     });
   }
 
-  async function downloadFile(filename, fileUrl){
-      try {
-          const response = await fetch(fileUrl);
-          if(!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
-          const blob = await response.blob();
-          const a = document.createElement('a');
-          a.href = URL.createObjectURL(blob);
-          a.download = filename;
-          document.body.appendChild(a);
-          a.click();
-          document.body.removeChild(a);
-          URL.revokeObjectURL(a.href);
-      } catch(e){
-          console.error(`Erreur téléchargement ${filename}:`, e);
-          alert(`Impossible de télécharger ${filename}. Vérifie le lien ou le fichier.`);
-      }
+  // async function downloadFile(filename, fileUrl){
+  //     try {
+  //         const response = await fetch(fileUrl);
+  //         console.log(response)
+  //         if(!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
+  //         const blob = await response.blob();
+  //         const a = document.createElement('a');
+  //         a.href = URL.createObjectURL(blob);
+  //         a.download = filename;
+  //         document.body.appendChild(a);
+  //         a.click();
+  //         document.body.removeChild(a);
+  //         URL.revokeObjectURL(a.href);
+  //     } catch(e){
+  //         console.error(`Erreur téléchargement ${filename}:`, e);
+  //         alert(`Impossible de télécharger ${filename}. Vérifie le lien ou le fichier.`);
+  //     }
+  // }
+
+  function downloadFile(filename, fileUrl) {
+  try {
+    console.log(`Downloading ${filename} from ${fileUrl}`);
+
+    // Direct link download – bypasses CORS
+    const link = document.createElement('a');
+    link.href = fileUrl;
+    link.download = filename;
+    link.target = '_blank'; // important for GitHub releases
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+
+    console.log(` ${filename} download triggered`);
+  } catch (err) {
+    console.error(` Download failed:`, err);
+    alert('Le téléchargement a échoué. Essayez d’ouvrir le lien dans un nouvel onglet.');
+    window.open(fileUrl, '_blank');
   }
+}
 
   function setupActions(){
     const printBtn = document.getElementById('printBtn');
