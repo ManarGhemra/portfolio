@@ -32,19 +32,16 @@ function revealOnScroll(){
     });
 }
 
-function downloadFile(filename, fileUrl) {
-    try {
-        const link = document.createElement('a');
-        link.href = fileUrl;
-        link.download = filename;
-        link.target = '_blank';
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-    } catch (err) {
-        alert('Le téléchargement a échoué. Essayez d’ouvrir le lien dans un nouvel onglet.');
-        window.open(fileUrl, '_blank');
-    }
+// =======================
+// Fonction download direct
+// =======================
+function downloadDirect(fileUrl, filename){
+    const link = document.createElement('a');
+    link.href = fileUrl;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
 }
 
 // =======================
@@ -53,59 +50,24 @@ function downloadFile(filename, fileUrl) {
 function setupActions(){
     const printBtn = document.getElementById('printBtn');
     const downloadBtn = document.getElementById('downloadBtn');
+
     if(printBtn) printBtn.addEventListener('click', ()=> window.print());
-    if(downloadBtn) downloadBtn.addEventListener('click', ()=> downloadFile('CV-ManarGhemra.pdf', FILE_URLS.CV));
+    if(downloadBtn) downloadBtn.addEventListener('click', ()=> downloadDirect(FILE_URLS.CV, 'CV-ManarGhemra.pdf'));
 }
 
 // =======================
 // TP1 - Fonctions
 // =======================
-function downloadTP1Blender(){ downloadFile('TP 01 - Manar Ghemra.blend', FILE_URLS.TP1_BLEND); }
-function downloadTP1Image(){ downloadFile('TP1 Preview - Manar Ghemra.jpg', FILE_URLS.TP1_IMAGE); }
+function downloadTP1Blender(){ downloadDirect(FILE_URLS.TP1_BLEND, 'TP 01 - Manar Ghemra.blend'); }
+function downloadTP1Image(){ downloadDirect(FILE_URLS.TP1_IMAGE, 'TP1 Preview - Manar Ghemra.jpg'); }
 
 // =======================
-// TP2 - Fonctions avec fetch + Blob
+// TP2 - Fonctions direct download
 // =======================
-async function downloadTP2File(url, filename){
-    try{
-        const response = await fetch(url);
-        if(!response.ok) throw new Error('Erreur lors du téléchargement');
-        const blob = await response.blob();
-        const link = document.createElement('a');
-        link.href = URL.createObjectURL(blob);
-        link.download = filename;
-        link.style.display = 'none';
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        URL.revokeObjectURL(link.href);
-    } catch(e){
-        // حذف alert والفشل
-        console.warn(`Téléchargement direct impossible, ouverture du lien en fallback.`);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = filename;
-        link.style.display = 'none';
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-    }
-}
-
-// TP2 spécifiques
-// ===> تعديل دالة downloadTP2Blend فقط
-function downloadTP2Blend() {
-    const link = document.createElement('a');
-    link.href = FILE_URLS_TP2.BLEND; // رابط GitHub release
-    link.download = 'room.blend'; // اسم الملف
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-}
-
-function downloadTP2PDF() { downloadTP2File(FILE_URLS_TP2.PDF, 'Rapport TP1 Ghemra Manar.pdf'); }
-function downloadTP2Image() { downloadTP2File(FILE_URLS_TP2.IMAGE, 'render.image.room.jpg'); }
-function downloadTP2Video() { downloadTP2File(FILE_URLS_TP2.VIDEO, 'video.mp4'); }
+function downloadTP2Blend() { downloadDirect(FILE_URLS_TP2.BLEND, 'room.blend'); }
+function downloadTP2PDF() { downloadDirect(FILE_URLS_TP2.PDF, 'Rapport TP1 Ghemra Manar.pdf'); }
+function downloadTP2Image() { downloadDirect(FILE_URLS_TP2.IMAGE, 'render.image.room.jpg'); }
+function downloadTP2Video() { downloadDirect(FILE_URLS_TP2.VIDEO, 'video.mp4'); }
 
 // =======================
 // Styles additionnels pour animations
