@@ -85,7 +85,7 @@ function downloadTP2Image() {
 
 function downloadTP2Video() { 
     console.log('🎬 Téléchargement vidéo TP2');
-    downloadDirect(FILE_URLS_TP2.VIDEO, 'room.mp4'); 
+    downloadDirect(FILE_URLS_TP2.VIDEO, 'TP2_Video_Room.mp4'); 
 }
 
 // =======================
