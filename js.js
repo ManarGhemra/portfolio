@@ -8,13 +8,13 @@ const FILE_URLS = {
 };
 
 // =======================
-// URLs TP2
+// URLs TP2 - CORRIGÉ (vedeo.mp4)
 // =======================
 const FILE_URLS_TP2 = {
     BLEND: 'https://github.com/ManarGhemra/portfolio/releases/download/v1.1/room.blend',
     PDF: 'https://github.com/ManarGhemra/portfolio/releases/download/v1.1/Rapport_tp1_Ghemra_Manar.pdf',
     IMAGE: 'https://github.com/ManarGhemra/portfolio/releases/download/v1.1/render.image.room.jpg',
-    VIDEO: 'https://github.com/ManarGhemra/portfolio/releases/download/v1.1/video.mp4'
+    VIDEO: 'https://github.com/ManarGhemra/portfolio/releases/download/v1.1/vedeo.mp4'  // ← CORRECTION ICI
 };
 
 // =======================
@@ -90,4 +90,5 @@ document.addEventListener('DOMContentLoaded', function(){
     revealOnScroll();
     window.addEventListener('scroll', revealOnScroll);
     console.log('🚀 Portfolio chargé — TP1 & TP2 téléchargements prêts');
+    console.log('✅ URL Vidéo TP2 corrigée:', FILE_URLS_TP2.VIDEO);
 });
