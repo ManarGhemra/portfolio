@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="fr">
 <head>
@@ -79,7 +78,6 @@
             <button class="btn ghost" onclick="downloadTP2PDF()">📝 Rapport PDF</button>
             <button class="btn ghost" onclick="downloadTP2Image()">🖼 Image rendue</button>
             <button class="btn ghost" onclick="downloadTP2Video()">🎬 Vidéo démo</button>
-         
           </div>
         </div>
 
@@ -153,12 +151,12 @@
       TP1_IMAGE: 'https://github.com/ManarGhemra/portfolio/releases/download/v1.0/tp1.png'
   };
 
-  // TP2 URLs
+  // TP2 URLs - VIDÉO CORRIGÉE (room.mp4 au lieu de video.mp4)
   const FILE_URLS_TP2 = {
       BLEND: 'https://github.com/ManarGhemra/portfolio/releases/download/v1.1/room.blend',
       PDF: 'https://github.com/ManarGhemra/portfolio/releases/download/v1.1/Rapport_tp1_Ghemra_Manar.pdf',
       IMAGE: 'https://github.com/ManarGhemra/portfolio/releases/download/v1.1/render.image.room.jpg',
-      VIDEO: 'https://github.com/ManarGhemra/portfolio/releases/download/v1.1/video.mp4'
+      VIDEO: 'https://github.com/ManarGhemra/portfolio/releases/download/v1.1/room.mp4'  // ← SEUL CHANGEMENT ICI
   };
 
   function escapeHtml(s){
@@ -199,7 +197,7 @@
   function downloadTP1Blender(){ downloadFile('TP 01 - Manar Ghemra.blend', FILE_URLS.TP1_BLEND); }
   function downloadTP1Image(){ downloadFile('TP1 Preview - Manar Ghemra.jpg', FILE_URLS.TP1_IMAGE); }
 
-  // TP2 avec fetch
+  // TP2 avec fetch - TOUTES LES FONCTIONS IDENTIQUES
   async function downloadTP2File(url, filename){
       try{
           const response = await fetch(url);
@@ -220,11 +218,11 @@
       }
   }
 
-  // Fonctions TP2
+  // Fonctions TP2 - TOUTES IDENTIQUES
   function downloadTP2Blend() { downloadTP2File(FILE_URLS_TP2.BLEND, 'room.blend'); }
   function downloadTP2PDF() { downloadTP2File(FILE_URLS_TP2.PDF, 'Rapport TP1 Ghemra Manar.pdf'); }
   function downloadTP2Image() { downloadTP2File(FILE_URLS_TP2.IMAGE, 'render.image.room.jpg'); }
-  function downloadTP2Video() { downloadTP2File(FILE_URLS_TP2.VIDEO, 'video.mp4'); }
+  function downloadTP2Video() { downloadTP2File(FILE_URLS_TP2.VIDEO, 'room.mp4'); }  // ← MÊME FONCTION QUE LES AUTRES
 
   function addDownloadStyles() {
       const style = document.createElement('style');
@@ -241,6 +239,7 @@
       revealOnScroll();
       window.addEventListener('scroll', revealOnScroll);
       console.log('🚀 Portfolio chargé — Téléchargements activés');
+      console.log('🎬 URL Vidéo TP2:', FILE_URLS_TP2.VIDEO);
   });
   </script>
 </body>
