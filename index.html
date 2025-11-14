@@ -171,7 +171,6 @@
       });
   }
 
-  // FONCTION DOWNLOAD EXACTEMENT COMME AVANT
   function downloadFile(filename, fileUrl) {
       try {
           const link = document.createElement('a');
@@ -191,15 +190,15 @@
       const printBtn = document.getElementById('printBtn');
       const downloadBtn = document.getElementById('downloadBtn');
       if(printBtn) printBtn.addEventListener('click', ()=> window.print());
-      // SEUL CHANGEMENT : le bouton CV utilise downloadFile() au lieu de downloadDirect()
-      if(downloadBtn) downloadBtn.addEventListener('click', ()=> downloadFile('CV-ManarGhemra.pdf', FILE_URLS.CV));
+      // BOUTON CV FAIT LA MÊME CHOSE QUE IMPRIMER
+      if(downloadBtn) downloadBtn.addEventListener('click', ()=> window.print());
   }
 
-  // TP1 - MÊME CODE
+  // TP1
   function downloadTP1Blender(){ downloadFile('TP 01 - Manar Ghemra.blend', FILE_URLS.TP1_BLEND); }
   function downloadTP1Image(){ downloadFile('TP1 Preview - Manar Ghemra.jpg', FILE_URLS.TP1_IMAGE); }
 
-  // TP2 avec fetch - MÊME CODE
+  // TP2 avec fetch
   async function downloadTP2File(url, filename){
       try{
           const response = await fetch(url);
@@ -220,7 +219,7 @@
       }
   }
 
-  // Fonctions TP2 - MÊME CODE
+  // Fonctions TP2
   function downloadTP2Blend() { downloadTP2File(FILE_URLS_TP2.BLEND, 'room.blend'); }
   function downloadTP2PDF() { downloadTP2File(FILE_URLS_TP2.PDF, 'Rapport TP1 Ghemra Manar.pdf'); }
   function downloadTP2Image() { downloadTP2File(FILE_URLS_TP2.IMAGE, 'render.image.room.jpg'); }
