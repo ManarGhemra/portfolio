@@ -8,13 +8,13 @@ const FILE_URLS = {
 };
 
 // =======================
-// URLs TP2 - CORRIGÉ (vedeo.mp4)
+// URLs TP2 - CORRIGÉ (room.mp4)
 // =======================
 const FILE_URLS_TP2 = {
     BLEND: 'https://github.com/ManarGhemra/portfolio/releases/download/v1.1/room.blend',
     PDF: 'https://github.com/ManarGhemra/portfolio/releases/download/v1.1/Rapport_tp1_Ghemra_Manar.pdf',
     IMAGE: 'https://github.com/ManarGhemra/portfolio/releases/download/v1.1/render.image.room.jpg',
-    VIDEO: 'https://github.com/ManarGhemra/portfolio/releases/download/v1.1/vedeo.mp4'
+    VIDEO: 'https://github.com/ManarGhemra/portfolio/releases/download/v1.1/room.mp4'  // ← CORRIGÉ : room.mp4
 };
 
 // =======================
@@ -33,31 +33,20 @@ function revealOnScroll(){
 }
 
 // =======================
-// Fonction download direct AMÉLIORÉE
+// Fonction download direct
 // =======================
 function downloadDirect(fileUrl, filename){
-    console.log(`📥 Téléchargement: ${filename} depuis ${fileUrl}`);
+    console.log(`🎬 Tentative de téléchargement: ${filename}`);
+    console.log(`🔗 URL: ${fileUrl}`);
     
-    try {
-        const link = document.createElement('a');
-        link.href = fileUrl;
-        link.download = filename;
-        link.style.display = 'none';
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        console.log(`✅ ${filename} - Téléchargement initié`);
-        
-        // Fallback après 2 secondes
-        setTimeout(() => {
-            console.log(`🔄 Fallback pour: ${filename}`);
-            window.open(fileUrl, '_blank');
-        }, 2000);
-        
-    } catch(error) {
-        console.error(`❌ Erreur avec ${filename}:`, error);
-        window.open(fileUrl, '_blank');
-    }
+    const link = document.createElement('a');
+    link.href = fileUrl;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    console.log(`✅ Téléchargement initié pour: ${filename}`);
 }
 
 // =======================
@@ -74,38 +63,16 @@ function setupActions(){
 // =======================
 // TP1 - Fonctions
 // =======================
-function downloadTP1Blender(){ 
-    console.log('🎯 downloadTP1Blender appelé');
-    downloadDirect(FILE_URLS.TP1_BLEND, 'TP 01 - Manar Ghemra.blend'); 
-}
-
-function downloadTP1Image(){ 
-    console.log('🎯 downloadTP1Image appelé');
-    downloadDirect(FILE_URLS.TP1_IMAGE, 'TP1 Preview - Manar Ghemra.jpg'); 
-}
+function downloadTP1Blender(){ downloadDirect(FILE_URLS.TP1_BLEND, 'TP 01 - Manar Ghemra.blend'); }
+function downloadTP1Image(){ downloadDirect(FILE_URLS.TP1_IMAGE, 'TP1 Preview - Manar Ghemra.jpg'); }
 
 // =======================
 // TP2 - Fonctions direct download
 // =======================
-function downloadTP2Blend() { 
-    console.log('🎯 downloadTP2Blend appelé');
-    downloadDirect(FILE_URLS_TP2.BLEND, 'room.blend'); 
-}
-
-function downloadTP2PDF() { 
-    console.log('🎯 downloadTP2PDF appelé');
-    downloadDirect(FILE_URLS_TP2.PDF, 'Rapport TP1 Ghemra Manar.pdf'); 
-}
-
-function downloadTP2Image() { 
-    console.log('🎯 downloadTP2Image appelé');
-    downloadDirect(FILE_URLS_TP2.IMAGE, 'render.image.room.jpg'); 
-}
-
-function downloadTP2Video() { 
-    console.log('🎯 downloadTP2Video appelé');
-    downloadDirect(FILE_URLS_TP2.VIDEO, 'video.mp4'); 
-}
+function downloadTP2Blend() { downloadDirect(FILE_URLS_TP2.BLEND, 'room.blend'); }
+function downloadTP2PDF() { downloadDirect(FILE_URLS_TP2.PDF, 'Rapport TP1 Ghemra Manar.pdf'); }
+function downloadTP2Image() { downloadDirect(FILE_URLS_TP2.IMAGE, 'render.image.room.jpg'); }
+function downloadTP2Video() { downloadDirect(FILE_URLS_TP2.VIDEO, 'video_room.mp4'); }
 
 // =======================
 // Styles additionnels pour animations
@@ -120,28 +87,6 @@ function addDownloadStyles() {
 }
 
 // =======================
-// Test manuel des URLs
-// =======================
-function testVideoUrl() {
-    console.log('🧪 Test de l\'URL vidéo:');
-    console.log('URL:', FILE_URLS_TP2.VIDEO);
-    
-    // Tester si l'URL est accessible
-    fetch(FILE_URLS_TP2.VIDEO, { method: 'HEAD' })
-        .then(response => {
-            console.log('✅ Statut vidéo:', response.status, response.statusText);
-            if (response.ok) {
-                console.log('🎬 Vidéo accessible - Le problème vient du bouton HTML');
-            } else {
-                console.log('❌ Vidéo non accessible - Vérifiez le fichier sur GitHub');
-            }
-        })
-        .catch(error => {
-            console.log('❌ Erreur de connexion:', error.message);
-        });
-}
-
-// =======================
 // Initialisation
 // =======================
 document.addEventListener('DOMContentLoaded', function(){
@@ -150,18 +95,6 @@ document.addEventListener('DOMContentLoaded', function(){
     revealOnScroll();
     window.addEventListener('scroll', revealOnScroll);
     
-    // Exposer les fonctions globalement
-    window.downloadTP1Blender = downloadTP1Blender;
-    window.downloadTP1Image = downloadTP1Image;
-    window.downloadTP2Blend = downloadTP2Blend;
-    window.downloadTP2PDF = downloadTP2PDF;
-    window.downloadTP2Image = downloadTP2Image;
-    window.downloadTP2Video = downloadTP2Video;
-    window.testVideoUrl = testVideoUrl;
-    
     console.log('🚀 Portfolio chargé — TP1 & TP2 téléchargements prêts');
-    console.log('🎬 URL Vidéo TP2:', FILE_URLS_TP2.VIDEO);
-    
-    // Test automatique de l'URL vidéo
-    testVideoUrl();
+    console.log('🎬 URL Vidéo TP2 (room.mp4):', FILE_URLS_TP2.VIDEO);
 });
