@@ -151,12 +151,12 @@
       TP1_IMAGE: 'https://github.com/ManarGhemra/portfolio/releases/download/v1.0/tp1.png'
   };
 
-  // TP2 URLs - VIDÉO CORRIGÉE (room.mp4 au lieu de video.mp4)
+  // TP2 URLs
   const FILE_URLS_TP2 = {
       BLEND: 'https://github.com/ManarGhemra/portfolio/releases/download/v1.1/room.blend',
       PDF: 'https://github.com/ManarGhemra/portfolio/releases/download/v1.1/Rapport_tp1_Ghemra_Manar.pdf',
       IMAGE: 'https://github.com/ManarGhemra/portfolio/releases/download/v1.1/render.image.room.jpg',
-      VIDEO: 'https://github.com/ManarGhemra/portfolio/releases/download/v1.1/room.mp4'  // ← SEUL CHANGEMENT ICI
+      VIDEO: 'https://github.com/ManarGhemra/portfolio/releases/download/v1.1/room.mp4'
   };
 
   function escapeHtml(s){
@@ -171,6 +171,7 @@
       });
   }
 
+  // FONCTION UNIQUE POUR TOUS LES TÉLÉCHARGEMENTS
   function downloadFile(filename, fileUrl) {
       try {
           const link = document.createElement('a');
@@ -190,39 +191,19 @@
       const printBtn = document.getElementById('printBtn');
       const downloadBtn = document.getElementById('downloadBtn');
       if(printBtn) printBtn.addEventListener('click', ()=> window.print());
+      // BOUTON CV UTILISE LA MÊME FONCTION QUE LES AUTRES
       if(downloadBtn) downloadBtn.addEventListener('click', ()=> downloadFile('CV-ManarGhemra.pdf', FILE_URLS.CV));
   }
 
-  // TP1
+  // TP1 - UTILISENT LA MÊME FONCTION
   function downloadTP1Blender(){ downloadFile('TP 01 - Manar Ghemra.blend', FILE_URLS.TP1_BLEND); }
   function downloadTP1Image(){ downloadFile('TP1 Preview - Manar Ghemra.jpg', FILE_URLS.TP1_IMAGE); }
 
-  // TP2 avec fetch - TOUTES LES FONCTIONS IDENTIQUES
-  async function downloadTP2File(url, filename){
-      try{
-          const response = await fetch(url);
-          if(!response.ok) throw new Error('Erreur lors du téléchargement');
-          const blob = await response.blob();
-          const link = document.createElement('a');
-          link.href = URL.createObjectURL(blob);
-          link.download = filename;
-          link.style.display = 'none';
-          document.body.appendChild(link);
-          link.click();
-          document.body.removeChild(link);
-          URL.revokeObjectURL(link.href);
-      } catch(e){
-          console.error(e);
-          alert(`Le téléchargement de "${filename}" a échoué. Essayez d’ouvrir le lien dans un nouvel onglet.`);
-          window.open(url,'_blank');
-      }
-  }
-
-  // Fonctions TP2 - TOUTES IDENTIQUES
-  function downloadTP2Blend() { downloadTP2File(FILE_URLS_TP2.BLEND, 'room.blend'); }
-  function downloadTP2PDF() { downloadTP2File(FILE_URLS_TP2.PDF, 'Rapport TP1 Ghemra Manar.pdf'); }
-  function downloadTP2Image() { downloadTP2File(FILE_URLS_TP2.IMAGE, 'render.image.room.jpg'); }
-  function downloadTP2Video() { downloadTP2File(FILE_URLS_TP2.VIDEO, 'room.mp4'); }  // ← MÊME FONCTION QUE LES AUTRES
+  // TP2 - UTILISENT LA MÊME FONCTION
+  function downloadTP2Blend() { downloadFile('room.blend', FILE_URLS_TP2.BLEND); }
+  function downloadTP2PDF() { downloadFile('Rapport TP1 Ghemra Manar.pdf', FILE_URLS_TP2.PDF); }
+  function downloadTP2Image() { downloadFile('render.image.room.jpg', FILE_URLS_TP2.IMAGE); }
+  function downloadTP2Video() { downloadFile('room.mp4', FILE_URLS_TP2.VIDEO); }
 
   function addDownloadStyles() {
       const style = document.createElement('style');
@@ -238,8 +219,7 @@
       setupActions();
       revealOnScroll();
       window.addEventListener('scroll', revealOnScroll);
-      console.log('🚀 Portfolio chargé — Téléchargements activés');
-      console.log('🎬 URL Vidéo TP2:', FILE_URLS_TP2.VIDEO);
+      console.log('🚀 Portfolio chargé — Tous les téléchargements utilisent la même fonction');
   });
   </script>
 </body>
